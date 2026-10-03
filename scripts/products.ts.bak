@@ -1,0 +1,688 @@
+import images from "./images.json";
+
+// Ảnh sản phẩm là ảnh cục bộ trong public/products (tạo bằng scripts/make-product-images.js).
+const img = images as Record<string, string>;
+const I = (key: string) => img[key];
+
+export type Category = "ao" | "quan" | "giay" | "phu-kien";
+export type Season = "xuan" | "ha" | "thu" | "dong";
+
+export interface Product {
+  slug: string;
+  name: string;
+  category: Category;
+  categoryLabel: string;
+  season?: Season;
+  price: number;
+  oldPrice?: number;
+  badge?: "BESTSELLER" | "MEMBER ONLY" | "LIMITED DROP" | "SALE" | "NEW DROP";
+  image: string;
+  gallery: string[];
+  rating: number;
+  reviews: number;
+  sizes: { label: string; inStock: boolean }[];
+  description: string;
+  tech: string;
+  family?: string; // slug sản phẩm gốc — các phiên bản màu dùng chung để chọn màu ở trang chi tiết
+  colorLabel?: string;
+  spec?: { length: string; thickness: 1 | 2 | 3 }; // chiều dài (tay/ống) và độ dày (1 mỏng · 2 vừa · 3 dày)
+}
+
+const clothing = ["S", "M", "L", "XL", "XXL"].map((label) => ({ label, inStock: label !== "XXL" }));
+const shoes = ["39", "40", "41", "42", "43", "44"].map((label) => ({ label, inStock: label !== "44" }));
+const oneSize = [{ label: "FREE SIZE", inStock: true }];
+const liters = [{ label: "25 LÍT", inStock: true }, { label: "32 LÍT", inStock: true }];
+
+export const categories: { slug: Category; label: string }[] = [
+  { slug: "ao", label: "Áo" },
+  { slug: "quan", label: "Quần" },
+  { slug: "giay", label: "Giày" },
+  { slug: "phu-kien", label: "Phụ kiện" },
+];
+
+// ===== Sản phẩm gốc =====
+const packable: Product = {
+  slug: "ao-gio-packable-ultraboost-spring", name: "Áo Khoác Gió Packable Ultralight Spring Edition",
+  category: "ao", categoryLabel: "Climastorm Running", season: "xuan", price: 1850000, oldPrice: 2790000, badge: "SALE",
+  image: I("p-jacket-mint"), gallery: [I("p-jacket-mint"), I("spring-hero")], rating: 4.8, reviews: 312, sizes: clothing,
+  description: "Áo gió siêu nhẹ, gấp gọn vào túi ngực chỉ còn bằng nắm tay. Vải chống thấm nước DWR 5.0 và khe thoát khí lưng giúp bạn chạy thoải mái trong tiết trời se lạnh đầu xuân.",
+  tech: "ClimaStorm® · DWR 5.0 · 87% polyester tái chế", spec: { length: "Tay dài", thickness: 1 },
+};
+const heatTee: Product = {
+  slug: "ao-thun-chay-sieu-thoang-heat-rdy", name: "Áo Thun Chạy Siêu Thoáng Heat.RDY",
+  category: "ao", categoryLabel: "Heat.RDY Pro Cooling", season: "ha", price: 950000, oldPrice: 1190000, badge: "MEMBER ONLY",
+  image: I("p-tee-volt"), gallery: [I("p-tee-volt"), I("summer-hero")], rating: 4.9, reviews: 680, sizes: clothing,
+  description: "Lưới micro-mesh thoáng khí giảm tới 3,2°C nhiệt cơ thể, khô nhanh gấp 2 lần vải thường. Lựa chọn hoàn hảo cho những buổi chạy giữa trưa mùa hè.",
+  tech: "ChillSkin™ · 92 g/m² · Khô nhanh QuickDry", spec: { length: "Tay ngắn", thickness: 1 },
+};
+const puffer: Product = {
+  slug: "ao-phao-the-thao-thermo-puffer", name: "Áo Khoác Phao Thermo Puffer Bio-Down",
+  category: "ao", categoryLabel: "Cold.RDY Bio-Insulation", season: "dong", price: 3490000, oldPrice: 4290000, badge: "SALE",
+  image: I("p-puffer"), gallery: [I("p-puffer"), I("winter-hero")], rating: 4.9, reviews: 180, sizes: clothing,
+  description: "Lớp lông vũ sinh học Bio-Down giữ nhiệt tới -5°C, cấu trúc chăn bông đa ngăn và khóa kéo chống nước. Nhẹ như áo gió, ấm như áo phao.",
+  tech: "Bio-Down 800-fill · Cold.RDY · Khóa chống nước", spec: { length: "Tay dài", thickness: 3 },
+};
+const polo: Product = {
+  slug: "ao-polo-xe-dua-audi-revolut-f1", name: "Áo Polo Đua Xe Audi Revolut F1® Team",
+  category: "ao", categoryLabel: "Trang phục đội đua", price: 1450000, badge: "BESTSELLER",
+  image: I("p-polo"), gallery: [I("p-polo")], rating: 4.8, reviews: 143, sizes: clothing,
+  description: "Polo chính hãng đen phối viền đỏ, cổ dệt kim cao cấp và logo Audi Sport in nhiệt phản quang.",
+  tech: "Cotton-poly piqué · Logo in nhiệt phản quang", spec: { length: "Tay ngắn", thickness: 2 },
+};
+const airflow: Product = {
+  slug: "giay-chay-bo-mua-he-airflow", name: "Giày Chạy Bộ Mùa Hè Airflow Max",
+  category: "giay", categoryLabel: "Summer Ultralight", season: "ha", price: 2590000, badge: "NEW DROP",
+  image: I("p-shoe-airflow"), gallery: [I("p-shoe-airflow")], rating: 4.5, reviews: 74, sizes: shoes,
+  description: "Upper lưới siêu thoáng, trọng lượng chỉ 230g. Luồng khí tối đa cho những buổi chạy nắng nóng.",
+  tech: "Engineered mesh · 230g · Airflow channels",
+};
+const bag: Product = {
+  slug: "balo-roll-top-hybrid-audi-revolut-f1", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® Team",
+  category: "phu-kien", categoryLabel: "Audi Revolut F1® Collection", price: 3200000, oldPrice: 3600000, badge: "NEW DROP",
+  image: I("p-bag"), gallery: [I("p-bag"), I("p-bag-model"), I("p-bag-laptop"), I("p-bag-buckle"), I("p-bag-back")],
+  rating: 4.9, reviews: 128, sizes: liters,
+  description: "Ba-lo roll-top giao thoa DNA tốc độ đường đua và phong cách streetwear. Vải ripstop phủ TPU chống thấm chuẩn IPX4, ngăn laptop 16\" lót nhung chống sốc, khóa kim loại tactical.",
+  tech: "Ripstop TPU IPX4 · Ngăn laptop 16\" · Khóa anode đen",
+};
+const cap: Product = {
+  slug: "mu-luoi-trai-audi-f1-team-cap", name: "Mũ Lưỡi Trai Audi F1 Team Cap",
+  category: "phu-kien", categoryLabel: "Phụ kiện Motorsport", price: 650000, badge: "MEMBER ONLY",
+  image: I("p-cap"), gallery: [I("p-cap")], rating: 4.7, reviews: 210, sizes: oneSize,
+  description: "Mũ lưỡi trai đen thêu nổi số tay đua và logo bốn vòng tròn bạc ở mặt trước.",
+  tech: "Cotton twill · Thêu nổi · Khóa điều chỉnh",
+};
+
+const trackPants: Product = {
+    slug: "quan-track-pants-kinetic-audi-f1", name: "Quần Track Pants Kinetic Audi Revolut F1® Team",
+    category: "quan", categoryLabel: "Track Pants", season: "thu", price: 1590000,
+    image: I("p-pants-front"), gallery: [I("p-pants-front"), I("p-pants-back")], rating: 4.6, reviews: 121, sizes: clothing,
+    description: "Quần nỉ kỹ thuật màu đen, gối gia cố chống mài mòn, cạp thun có dây rút và gấu khóa kéo. Gọn gàng khi chạy bộ, thoải mái khi đi chơi.",
+    tech: "Fleece kỹ thuật · Gối gia cố · Gấu khóa kéo", spec: { length: "Quần dài", thickness: 2 },
+  };
+const jogger: Product = {
+    slug: "quan-jogger-tech-fleece-kinetic", name: "Quần Jogger Tech-Fleece Kinetic (Túi Khóa Đỏ)",
+    category: "quan", categoryLabel: "Jogger", season: "dong", price: 1390000, oldPrice: 1690000, badge: "SALE",
+    image: I("p-pants-back"), gallery: [I("p-pants-back")], rating: 4.7, reviews: 256, sizes: clothing,
+    description: "Quần jogger nỉ dày dặn, túi khóa kéo viền đỏ an toàn cho điện thoại và chìa khóa, ống bó nhẹ ở cổ chân.",
+    tech: "Tech-fleece · Túi khóa kéo · Ống bo gấu", spec: { length: "Quần dài", thickness: 3 },
+  };
+
+const windbreakerJ: Product = {
+    slug: "ao-khoac-gio-dua-xe-f1-team", name: "Áo Khoác Gió Đua Xe F1 Team",
+    category: "ao", categoryLabel: "Outerwear kỹ thuật", price: 2850000, image: I("p-windbreaker"),
+    gallery: [I("p-windbreaker")], rating: 4.7, reviews: 87, sizes: clothing,
+    description: "Áo khoác gió chống nước, dải băng phản quang ban đêm và khóa kéo chống gió, thừa hưởng tinh thần đường đua.",
+    tech: "Chống nước · Phản quang 360° · Khóa chống gió", spec: { length: "Tay dài", thickness: 1 },
+  };
+const thermoJ: Product = {
+    slug: "ao-khoac-thermo-shield-sub-zero", name: "Áo Khoác Thermo Shield Sub-Zero",
+    category: "ao", categoryLabel: "Cold.RDY", season: "dong", price: 3190000, image: I("p-jacket-thermo"),
+    gallery: [I("p-jacket-thermo"), I("winter-hero")], rating: 4.6, reviews: 96, sizes: clothing,
+    description: "Áo khoác kỹ thuật cho mùa đông khắc nghiệt: chống gió, chống nước nhẹ và giữ nhiệt vượt trội mà vẫn thoáng khí khi vận động mạnh.",
+    tech: "Thermo-Cell · Windproof · Sub-zero tested", spec: { length: "Tay dài", thickness: 3 },
+  };
+const softshell: Product = {
+    slug: "ao-khoac-softshell-audi-revolut-f1", name: "Áo Khoác Softshell Audi Revolut F1® Team",
+    category: "ao", categoryLabel: "Outerwear kỹ thuật", season: "thu", price: 2650000, badge: "BESTSELLER",
+    image: I("p-softshell"), gallery: [I("p-softshell")], rating: 4.8, reviews: 133, sizes: clothing,
+    description: "Áo khoác softshell đen phối chỉ đỏ, cổ đứng chắn gió, lớp lót mềm ấm. Logo đội đua thêu nổi trước ngực — hợp cho những ngày thu se lạnh.",
+    tech: "Softshell 3 lớp · Chắn gió · Chống nước nhẹ", spec: { length: "Tay dài", thickness: 2 },
+  };
+const teeBlack: Product = {
+    slug: "ao-thun-audi-revolut-f1-carbon-black", name: "Áo Thun Audi Revolut F1® Team Heather Grey",
+    category: "ao", categoryLabel: "Trang phục đội đua", price: 890000, badge: "BESTSELLER",
+    image: I("p-tee-black"), gallery: [I("p-tee-black")], rating: 4.7, reviews: 204, sizes: clothing,
+    description: "Áo thun cổ tròn form rộng, in logo F1 Team ở ngực và viền tay phối màu neon. Vải mềm, co giãn nhẹ, form thể thao gọn gàng — mặc đi tập hay đi chơi đều hợp.",
+    tech: "Cotton-poly co giãn · In logo cao cấp · Form regular", spec: { length: "Tay ngắn", thickness: 2 },
+  };
+
+const teeCycling: Product = {
+    slug: "ao-dap-xe-cycling-club-jersey", name: "Áo Đạp Xe Cycling Club Jersey",
+    category: "ao", categoryLabel: "Áo đạp xe", price: 690000, badge: "NEW DROP",
+    image: I("p-tee-cycling"), gallery: [I("p-tee-cycling")], rating: 4.6, reviews: 87, sizes: clothing,
+    description: "Jersey đạp xe tay ngắn khoá kéo toàn thân, phối hoạ tiết kim cương ở tay và sườn. Form ôm khí động học, vạt sau hơi dài để che lưng khi cúi người.",
+    tech: "Vải thoáng khí · Khoá kéo YKK · Form ôm", spec: { length: "Tay ngắn", thickness: 1 },
+  };
+const teeRed: Product = {
+    slug: "ao-thun-the-thao-phoi-den-do-gach", name: "Áo Thun Thể Thao Phối Đen Đỏ Gạch",
+    category: "ao", categoryLabel: "Áo thun thể thao", price: 590000, badge: "BESTSELLER",
+    image: I("p-tee-model-red"), gallery: [I("p-tee-model-red")], rating: 4.7, reviews: 132, sizes: clothing,
+    description: "Áo thun thể thao cổ V, vai raglan phối đen, logo chữ thập nhỏ trước ngực. Vải nhanh khô, đường may gọn — mặc tập gym, chạy bộ hay cầu lông đều hợp.",
+    tech: "Vải nhanh khô · Raglan phối màu · Form regular", spec: { length: "Tay ngắn", thickness: 1 },
+  };
+const teeAston: Product = {
+    slug: "ao-thun-dua-xe-aston-martin-f1-team", name: "Áo Thun Đua Xe Aston Martin F1 Team",
+    category: "ao", categoryLabel: "Trang phục đội đua", price: 1190000, badge: "LIMITED DROP",
+    image: I("p-tee-aston-green"), gallery: [I("p-tee-aston-green")], rating: 4.8, reviews: 96, sizes: clothing,
+    description: "Áo thun đội đua xanh lục cổ tròn, in logo nhà tài trợ ở ngực và hai tay, số 14 ở gấu áo. Vải kỹ thuật nhẹ, co giãn tốt.",
+    tech: "Polyester kỹ thuật · In chuyển nhiệt · Form regular", spec: { length: "Tay ngắn", thickness: 1 },
+  };
+const teeMerc: Product = {
+    slug: "ao-thun-dua-xe-mercedes-amg-f1-team", name: "Áo Thun Đua Xe Mercedes-AMG F1 Team",
+    category: "ao", categoryLabel: "Trang phục đội đua", price: 1290000,
+    image: I("p-tee-merc-black"), gallery: [I("p-tee-merc-black")], rating: 4.8, reviews: 118, sizes: clothing,
+    description: "Áo thun đội đua đen cổ tròn, vai phối sọc trắng, logo đội và nhà tài trợ in sắc nét ở ngực và tay áo. Vải thoáng, nhanh khô.",
+    tech: "Polyester tái chế · In chuyển nhiệt · Form regular", spec: { length: "Tay ngắn", thickness: 1 },
+  };
+
+const jkHarsh: Product = {
+    slug: "ao-khoac-da-racing-harsh-den-trang", name: "Áo Khoác Da Racing Harsh Đen Trắng",
+    category: "ao", categoryLabel: "Áo khoác đua", price: 2290000, badge: "BESTSELLER",
+    image: I("p-jk-harsh"), gallery: [I("p-jk-harsh")], rating: 4.8, reviews: 142, sizes: clothing,
+    description: "Áo khoác bomber da PU phối đen trắng phong cách đua xe, cổ đứng, khoá kéo giữa, in chữ Harsh Racing lớn ở ngực và hai tay. Bo gấu và cổ tay co giãn.",
+    tech: "Da PU mềm · Lót lưới · Bo gấu co giãn", spec: { length: "Tay dài", thickness: 2 },
+  };
+const jkJd: Product = {
+    slug: "ao-khoac-dua-xe-nascar-jack-daniels", name: "Áo Khoác Đua Xe Nascar Jack Daniel’s",
+    category: "ao", categoryLabel: "Áo khoác đua", price: 1890000, badge: "LIMITED DROP",
+    image: I("p-jk-jd"), gallery: [I("p-jk-jd")], rating: 4.7, reviews: 89, sizes: clothing,
+    description: "Áo khoác đen cổ đứng kiểu đội đua Nascar, thêu logo và huy hiệu nhà tài trợ khắp thân và hai tay. Lớp bông dày giữ ấm, khoá kéo giữa.",
+    tech: "Vải cotton bố · Thêu nổi · Lót bông", spec: { length: "Tay dài", thickness: 3 },
+  };
+const jkHarley: Product = {
+    slug: "ao-khoac-dua-xe-harley-davidson-den", name: "Áo Khoác Đua Xe Harley-Davidson Đen",
+    category: "ao", categoryLabel: "Áo khoác đua", price: 1990000, badge: "NEW DROP",
+    image: I("p-jk-harley"), gallery: [I("p-jk-harley")], rating: 4.8, reviews: 104, sizes: clothing,
+    description: "Áo khoác đen cổ đứng thêu chữ Harley-Davidson dọc hai tay và huy hiệu ngực, viền chỉ cam hai bên. Lớp bông ấm, bo gấu chắc chắn.",
+    tech: "Vải cotton bố · Thêu nổi · Lót bông", spec: { length: "Tay dài", thickness: 3 },
+  };
+
+const poloGazoo: Product = {
+    slug: "ao-polo-dua-xe-toyota-gazoo-racing", name: "Áo Polo Đua Xe Toyota Gazoo Racing",
+    category: "ao", categoryLabel: "Trang phục đội đua", price: 1390000, badge: "BESTSELLER",
+    image: I("p-polo-gazoo"), gallery: [I("p-polo-gazoo")], rating: 4.8, reviews: 126, sizes: clothing,
+    description: "Áo polo đen cổ bẻ viền đỏ trắng, in logo GR Sport ở vai, logo Toyota Gazoo Racing ở ngực và lưng cùng các nhà tài trợ trên tay áo. Vải cá sấu thoáng, đứng form.",
+    tech: "Cotton cá sấu · In chuyển nhiệt · Form regular", spec: { length: "Tay ngắn", thickness: 2 },
+  };
+const poloFerrari: Product = {
+    slug: "ao-polo-doi-dua-scuderia-ferrari-do", name: "Áo Polo Đội Đua Scuderia Ferrari Đỏ",
+    category: "ao", categoryLabel: "Trang phục đội đua", price: 1590000, badge: "LIMITED DROP",
+    image: I("p-polo-ferrari"), gallery: [I("p-polo-ferrari")], rating: 4.9, reviews: 158, sizes: clothing,
+    description: "Áo polo đỏ Ferrari cổ bẻ, vai và sườn phối trắng, huy hiệu ngựa vồ ở ngực cùng logo các nhà tài trợ. Vải cotton mềm, co giãn nhẹ.",
+    tech: "Cotton co giãn · In logo cao cấp · Form regular", spec: { length: "Tay ngắn", thickness: 2 },
+  };
+
+const ptGenstex: Product = {
+    slug: "quan-motocross-genstex-den", name: "Quần Motocross Genstex Đen",
+    category: "quan", categoryLabel: "Quần motocross", price: 1290000, badge: "NEW DROP",
+    image: I("p-pt-genstex"), gallery: [I("p-pt-genstex")], rating: 4.6, reviews: 74, sizes: clothing,
+    description: "Quần đua địa hình màu đen, gối và đùi gia cố nhiều lớp chống mài mòn, cạp có đai điều chỉnh và dây khoá.",
+    tech: "Vải bố chống mài · Gối gia cố · Cạp điều chỉnh", spec: { length: "Quần dài", thickness: 3 },
+  };
+const ptFoxBw: Product = {
+    slug: "quan-motocross-fox-180-den-trang", name: "Quần Motocross Fox 180 Đen Trắng",
+    category: "quan", categoryLabel: "Quần motocross", price: 1890000, badge: "BESTSELLER",
+    image: I("p-pt-fox-bw"), gallery: [I("p-pt-fox-bw")], rating: 4.8, reviews: 112, sizes: clothing,
+    description: "Quần đua địa hình phối đen trắng chuyển sắc, in chữ FOX dọc ống và logo cáo ở gấu. Form gọn, gối gia cố.",
+    tech: "Vải bố chống mài · Gối gia cố · Co giãn nhẹ", spec: { length: "Quần dài", thickness: 3 },
+  };
+const ptFoxSand: Product = {
+    slug: "quan-motocross-fox-180-be-neon", name: "Quần Motocross Fox 180 Be Neon",
+    category: "quan", categoryLabel: "Quần motocross", price: 1890000, badge: "LIMITED DROP",
+    image: I("p-pt-fox-sand"), gallery: [I("p-pt-fox-sand")], rating: 4.7, reviews: 86, sizes: clothing,
+    description: "Quần đua địa hình màu be phối đen, viền vàng neon và chữ FOX lớn dọc ống. Gối gia cố, cạp có đai điều chỉnh.",
+    tech: "Vải bố chống mài · Gối gia cố · Cạp điều chỉnh", spec: { length: "Quần dài", thickness: 3 },
+  };
+const ptCycling: Product = {
+    slug: "bo-do-dap-xe-nu-tay-dai-hong-tim", name: "Bộ Đồ Đạp Xe Nữ Tay Dài Hồng Tím",
+    category: "quan", categoryLabel: "Bộ đồ đạp xe", price: 1490000, badge: "NEW DROP",
+    image: I("p-pt-cycling-set"), gallery: [I("p-pt-cycling-set")], rating: 4.7, reviews: 95, sizes: clothing,
+    description: "Bộ áo jersey tay dài khoá kéo nửa thân và quần đạp xe có đệm, họa tiết tam giác chuyển sắc hồng tím. Vải thoáng khí, ôm gọn.",
+    tech: "Vải thoáng khí · Quần có đệm · Khoá kéo", spec: { length: "Tay dài · Quần dài", thickness: 2 },
+  };
+
+const ptCspd: Product = {
+    slug: "bo-do-dap-xe-nu-concept-speed-den", name: "Bộ Đồ Đạp Xe Nữ Concept Speed Đen",
+    category: "quan", categoryLabel: "Bộ đồ đạp xe", price: 1690000, badge: "NEW DROP",
+    image: I("p-pt-cspd"), gallery: [I("p-pt-cspd")], rating: 4.8, reviews: 67, sizes: clothing,
+    description: "Bộ đồ đạp xe nữ gồm áo jersey tay ngắn khoá kéo họa tiết vân sóng phối sọc màu và quần short có đệm in chữ CSPD. Vải co giãn bốn chiều, ôm gọn và thoáng khí.",
+    tech: "Vải co giãn 4 chiều · Quần có đệm · Khoá kéo", spec: { length: "Tay ngắn · Quần short", thickness: 1 },
+  };
+
+const bgJogarbola: Product = {
+    slug: "balo-pickleball-jogarbola-xanh-navy", name: "Balo Pickleball Jogarbola Xanh Navy",
+    category: "phu-kien", categoryLabel: "Balo & Túi thể thao", price: 1190000, oldPrice: 1390000, badge: "BESTSELLER",
+    image: I("p-bg-jogarbola"), gallery: [I("p-bg-jogarbola")], rating: 4.8, reviews: 93, sizes: oneSize,
+    description: "Balo thể thao dung tích lớn viền hồng nổi bật, nhiều ngăn phụ bên hông để vợt, giày và phụ kiện. Quai đeo êm, có tay xách phía trên.",
+    tech: "Vải polyester chống thấm · Nhiều ngăn · Quai đệm êm",
+  };
+const bgAcg: Product = {
+    slug: "balo-roll-top-outdoor-acg-den", name: "Balo Roll-Top Outdoor ACG Đen",
+    category: "phu-kien", categoryLabel: "Balo & Túi thể thao", price: 1590000, badge: "NEW DROP",
+    image: I("p-bg-acg"), gallery: [I("p-bg-acg")], rating: 4.7, reviews: 71, sizes: oneSize,
+    description: "Balo roll-top màu đen phối xám, dây đeo tím nổi bật, khoá móc tiện lợi và ngăn lưới bên hông. Vải ripstop nhẹ, bền, hợp đi làm và dã ngoại.",
+    tech: "Ripstop nhẹ · Roll-top · Ngăn lưới bên hông",
+  };
+const bgKamito: Product = {
+    slug: "tui-pickleball-kamito-elite-tour-v3", name: "Túi Pickleball Kamito Elite Tour Bag V3",
+    category: "phu-kien", categoryLabel: "Balo & Túi thể thao", price: 2290000, badge: "LIMITED DROP",
+    image: I("p-bg-kamito"), gallery: [I("p-bg-kamito")], rating: 4.9, reviews: 58, sizes: oneSize,
+    description: "Túi dạng ba-lo đỏ trắng, da PU mềm, nhiều ngăn để vợt và giày, có quai đeo vai và tay xách. Thiết kế dành cho tay vợt thi đấu.",
+    tech: "Da PU · Nhiều ngăn · Quai đeo vai",
+  };
+
+const shWhite: Product = {
+    slug: "giay-sneaker-chunky-trang-xam", name: "Giày Sneaker Đế Chunky Trắng Xám",
+    category: "giay", categoryLabel: "Sneaker", price: 1290000, oldPrice: 1490000, badge: "BESTSELLER",
+    image: I("p-sh-white"), gallery: [I("p-sh-white")], rating: 4.7, reviews: 164, sizes: shoes,
+    description: "Giày sneaker trắng đế dày kiểu chunky, upper da phối lưới thoáng, dây giày in chữ và gót phối xám. Đế êm, tôn dáng, dễ phối đồ.",
+    tech: "Da PU + lưới · Đế EVA dày · Dây in chữ",
+  };
+const shMint: Product = {
+    slug: "giay-sneaker-luoi-mint-boost", name: "Giày Sneaker Lưới Mint Boost",
+    category: "giay", categoryLabel: "Sneaker", price: 1590000, badge: "NEW DROP",
+    image: I("p-sh-mint"), gallery: [I("p-sh-mint")], rating: 4.8, reviews: 121, sizes: shoes,
+    description: "Giày sneaker upper lưới dệt màu mint dịu mắt, đế boost trắng êm, tem gót xanh ngọc. Nhẹ, thoáng và ôm chân.",
+    tech: "Upper lưới dệt · Đế boost êm · Đế ngoài cao su",
+  };
+const shKnit: Product = {
+    slug: "giay-luoi-slip-on-det-den-xam", name: "Giày Lười Slip-On Vải Dệt Đen Xám",
+    category: "giay", categoryLabel: "Giày lười", price: 790000, badge: "LIMITED DROP",
+    image: I("p-sh-knit"), gallery: [I("p-sh-knit")], rating: 4.6, reviews: 208, sizes: shoes,
+    description: "Giày lười slip-on cổ cao vải dệt co giãn màu đen xám, đế trắng nhẹ có vân chống trơn. Xỏ chân nhanh, không cần buộc dây.",
+    tech: "Vải dệt co giãn · Đế EVA nhẹ · Quai kéo gót",
+  };
+
+const mCapAdidas: Product = {
+    slug: "mu-luoi-trai-adidas-hoa-tiet-do-man", name: "Mũ Lưỡi Trai Adidas Họa Tiết Đỏ Mận",
+    category: "phu-kien", categoryLabel: "Mũ thể thao", price: 590000, badge: "NEW DROP",
+    image: I("p-mau-s00"), gallery: [I("p-mau-s00")], rating: 4.7, reviews: 88, sizes: oneSize,
+    description: "Mũ lưỡi trai màu đỏ mận in họa tiết loang, logo ba sọc ở mặt trước, lưỡi trai cong và khoá điều chỉnh phía sau.",
+    tech: "Vải polyester · Lưỡi cong · Khoá điều chỉnh",
+  };
+const mCapLA: Product = {
+    slug: "mu-luoi-trai-la-cam-dat", name: "Mũ Lưỡi Trai LA Cam Đất",
+    category: "phu-kien", categoryLabel: "Mũ thể thao", price: 450000, badge: "BESTSELLER",
+    image: I("p-mau-s01"), gallery: [I("p-mau-s01")], rating: 4.8, reviews: 142, sizes: oneSize,
+    description: "Mũ lưỡi trai màu cam đất thêu nổi logo LA ở mặt trước, form cứng cáp, vành cong tự nhiên, khoá điều chỉnh phía sau.",
+    tech: "Cotton twill · Thêu nổi · Khoá điều chỉnh",
+  };
+const mVisor: Product = {
+    slug: "mu-nua-dau-the-thao-hong-pastel", name: "Mũ Nửa Đầu Thể Thao Hồng Pastel",
+    category: "phu-kien", categoryLabel: "Mũ thể thao", price: 290000, badge: "NEW DROP",
+    image: I("p-mau-s08"), gallery: [I("p-mau-s08")], rating: 4.5, reviews: 64, sizes: oneSize,
+    description: "Mũ nửa đầu che nắng màu hồng pastel, vành rộng, dây thun co giãn ôm đầu. Nhẹ và thoáng, hợp chạy bộ, đánh golf, đi biển.",
+    tech: "Vải nhẹ · Vành rộng · Dây thun co giãn",
+  };
+const mCapGrey: Product = {
+    slug: "mu-luoi-trai-the-thao-thoang-khi-xam", name: "Mũ Lưỡi Trai Thể Thao Thoáng Khí Xám",
+    category: "phu-kien", categoryLabel: "Mũ thể thao", price: 320000,
+    image: I("p-mau-s09"), gallery: [I("p-mau-s09")], rating: 4.6, reviews: 97, sizes: oneSize,
+    description: "Mũ lưỡi trai màu xám vải mỏng nhẹ, thân mũ có lỗ thoáng khí, viền lưỡi trai phối xám đậm. Nhanh khô, hợp chạy bộ và tập luyện.",
+    tech: "Vải nhanh khô · Lỗ thoáng khí · Siêu nhẹ",
+  };
+const mCapKelme: Product = {
+    slug: "mu-luoi-trai-kelme-den", name: "Mũ Lưỡi Trai Kelme Đen",
+    category: "phu-kien", categoryLabel: "Mũ thể thao", price: 350000,
+    image: I("p-mau-s10"), gallery: [I("p-mau-s10")], rating: 4.7, reviews: 76, sizes: oneSize,
+    description: "Mũ lưỡi trai màu đen trơn, logo Kelme nhỏ ở bên hông, form gọn, vải mềm thoáng, khoá điều chỉnh phía sau.",
+    tech: "Vải mềm thoáng · Khoá điều chỉnh · Form gọn",
+  };
+const mCapMerc: Product = {
+    slug: "mu-luoi-trai-mercedes-amg-petronas-trang", name: "Mũ Lưỡi Trai Mercedes-AMG Petronas Trắng",
+    category: "phu-kien", categoryLabel: "Mũ thể thao", price: 490000, badge: "LIMITED DROP",
+    image: I("p-mau-s14"), gallery: [I("p-mau-s14")], rating: 4.9, reviews: 121, sizes: oneSize,
+    description: "Mũ lưỡi trai trắng thêu logo Mercedes và chữ Petronas ở hai bên, phiên bản fan đội đua F1. Vải cotton mềm, khoá điều chỉnh phía sau.",
+    tech: "Cotton · Thêu nổi · Khoá điều chỉnh",
+  };
+const mBagKeefly: Product = {
+    slug: "balo-mini-the-thao-keepfly-do", name: "Balo Mini Thể Thao Keepfly Đỏ",
+    category: "phu-kien", categoryLabel: "Balo & Túi thể thao", price: 390000, oldPrice: 450000, badge: "BESTSELLER",
+    image: I("p-mau-s02"), gallery: [I("p-mau-s02")], rating: 4.6, reviews: 203, sizes: oneSize,
+    description: "Balo mini màu đỏ phối đáy đen, ngăn chính khoá kéo, quai đeo êm và nhẹ. Gọn gàng cho đi học, đi tập và dạo phố.",
+    tech: "Vải polyester chống thấm · Siêu nhẹ · Quai đệm êm",
+  };
+const mBagNike: Product = {
+    slug: "balo-mini-nike-brasilia-jdi-hong", name: "Balo Mini Nike Brasilia JDI Hồng",
+    category: "phu-kien", categoryLabel: "Balo & Túi thể thao", price: 790000, badge: "NEW DROP",
+    image: I("p-mau-s03"), gallery: [I("p-mau-s03")], rating: 4.8, reviews: 95, sizes: oneSize,
+    description: "Balo mini màu hồng đậm in logo Nike, ngăn chính rộng, quai đeo điều chỉnh và có móc treo ở thân. Hợp cho bé và người dùng nhỏ nhắn.",
+    tech: "Polyester bền · Quai điều chỉnh · Dung tích nhỏ gọn",
+  };
+const mBagKamito: Product = {
+    slug: "balo-kamito-xanh-navy-hoa-tiet", name: "Balo Kamito Xanh Navy Họa Tiết",
+    category: "phu-kien", categoryLabel: "Balo & Túi thể thao", price: 850000,
+    image: I("p-mau-s13"), gallery: [I("p-mau-s13")], rating: 4.7, reviews: 67, sizes: oneSize,
+    description: "Balo xanh navy in họa tiết tia sáng, ngăn trước có khoá kéo, quai đeo đệm êm. Nhiều ngăn, dùng được cho đi học và đi tập.",
+    tech: "Vải chống thấm · Nhiều ngăn · Quai đệm êm",
+  };
+const mShCream: Product = {
+    slug: "giay-sneaker-da-trang-kem", name: "Giày Sneaker Da Trắng Kem",
+    category: "giay", categoryLabel: "Sneaker", price: 1190000, badge: "NEW DROP",
+    image: I("p-mau-s04"), gallery: [I("p-mau-s04")], rating: 4.7, reviews: 112, sizes: shoes,
+    description: "Giày sneaker da trắng kem lịch sự, đường chỉ may tinh tế, lót trong mềm và đế êm. Dễ phối với quần tây hoặc quần jean.",
+    tech: "Da PU mềm · Đế cao su êm · Lót trong thoáng",
+  };
+const mShCamo: Product = {
+    slug: "giay-sneaker-chunky-den-camo", name: "Giày Sneaker Chunky Đen Camo",
+    category: "giay", categoryLabel: "Sneaker", price: 1090000, oldPrice: 1290000,
+    image: I("p-mau-s05"), gallery: [I("p-mau-s05")], rating: 4.6, reviews: 138, sizes: shoes,
+    description: "Giày sneaker đế dày màu đen phối họa tiết camo trắng xám, dây buộc bản to và lưới thoáng. Nổi bật, êm chân.",
+    tech: "Lưới + da PU · Đế EVA dày · Dây bản to",
+  };
+const mShSkechers: Product = {
+    slug: "giay-chay-bo-skechers-max-cushioning-trang-tim", name: "Giày Chạy Bộ Skechers Max Cushioning Trắng Tím",
+    category: "giay", categoryLabel: "Giày chạy bộ", price: 2190000, badge: "BESTSELLER",
+    image: I("p-mau-s06"), gallery: [I("p-mau-s06")], rating: 4.8, reviews: 176, sizes: shoes,
+    description: "Giày chạy bộ trắng phối tím hồng, đế đệm dày giảm chấn, upper lưới thoáng. Êm ái cho cự ly dài.",
+    tech: "Đệm giảm chấn · Upper lưới · Đế cao su bám tốt",
+  };
+const mShRed: Product = {
+    slug: "giay-sneaker-de-cao-den-do", name: "Giày Sneaker Đế Cao Đen Đỏ",
+    category: "giay", categoryLabel: "Sneaker", price: 990000, oldPrice: 1190000, badge: "SALE",
+    image: I("p-mau-s07"), gallery: [I("p-mau-s07")], rating: 4.5, reviews: 154, sizes: shoes,
+    description: "Giày sneaker đế cao màu đen phối đỏ trắng, dây buộc bản to, thân giày lưới da phối. Cá tính, tôn dáng.",
+    tech: "Lưới + da PU · Đế cao tăng chiều cao · Chống trơn",
+  };
+const mShTech: Product = {
+    slug: "giay-chay-bo-cong-nghe-xanh-cam", name: "Giày Chạy Bộ Công Nghệ Xanh Cam",
+    category: "giay", categoryLabel: "Giày chạy bộ", price: 1590000, badge: "LIMITED DROP",
+    image: I("p-mau-s11"), gallery: [I("p-mau-s11")], rating: 4.7, reviews: 89, sizes: shoes,
+    description: "Giày chạy bộ phối màu xanh ngọc, cam và đỏ, dây buộc cam nổi bật, đế nhiều rãnh bám. Thiết kế thể thao hiện đại.",
+    tech: "Upper dệt · Đế nhiều rãnh · Dây buộc bản dẹt",
+  };
+const mShHigh: Product = {
+    slug: "giay-sneaker-co-cao-vai-det-trang", name: "Giày Sneaker Cổ Cao Vải Dệt Trắng",
+    category: "giay", categoryLabel: "Sneaker", price: 1190000,
+    image: I("p-mau-s12"), gallery: [I("p-mau-s12")], rating: 4.6, reviews: 132, sizes: shoes,
+    description: "Giày sneaker cổ cao vải dệt trắng ôm cổ chân, đai chữ in dọc thân và đế dày êm. Phong cách đường phố.",
+    tech: "Vải dệt co giãn · Đế dày êm · Đai in chữ",
+  };
+
+const speedcat: Product = {
+    slug: "giay-speedcat-pro-f1-edition", name: "Giày Speedcat Pro F1 Edition",
+    category: "giay", categoryLabel: "Giày Performance", price: 3890000, badge: "LIMITED DROP",
+    image: I("p-speedcat"), gallery: [I("p-speedcat")], rating: 4.8, reviews: 58, sizes: shoes,
+    description: "Giày đua đen carbon, đế cao su mỏng bám đường chuyên dụng. Phiên bản giới hạn hợp tác Audi F1.",
+    tech: "Đế cao su mỏng · Da lộn · Giới hạn 500 đôi",
+  };
+
+/** Tạo phiên bản màu từ một sản phẩm gốc. */
+const colorway = (base: Product, o: Partial<Product> & Pick<Product, "slug" | "name" | "image">, color: string): Product => ({
+  ...base, badge: undefined, oldPrice: undefined, ...o, gallery: o.gallery ?? [o.image], family: base.family ?? base.slug, colorLabel: color,
+  description: `${base.description} Phiên bản màu ${color}.`,
+});
+
+export const baseProducts: Product[] = [
+  packable, heatTee, puffer, polo,
+  mCapAdidas, mCapLA, mVisor, mCapGrey, mCapKelme, mCapMerc, mBagKeefly, mBagNike, mBagKamito, mShCream, mShCamo, mShSkechers, mShRed, mShTech, mShHigh,
+  shWhite, shMint, shKnit,
+  bgJogarbola, bgAcg, bgKamito,
+  ptCspd, ptGenstex, ptFoxBw, ptFoxSand, ptCycling,
+  jkHarsh, jkJd, jkHarley, poloGazoo, poloFerrari,
+  teeBlack, teeCycling, teeRed, teeAston, teeMerc,
+
+  thermoJ,
+
+  windbreakerJ,
+
+  softshell,
+
+  {
+    slug: "ao-gile-audi-revolut-f1-team", name: "Áo Gile Chần Bông Audi Revolut F1® Team",
+    category: "ao", categoryLabel: "Trang phục đội đua", season: "dong", price: 1950000, badge: "MEMBER ONLY",
+    image: I("p-vest"), gallery: [I("p-vest")], rating: 4.7, reviews: 81, sizes: clothing,
+    description: "Áo gile chần bông ba lớp giữ ấm thân trên mà không cản trở cử động tay. Mặc ngoài áo thun hoặc lót trong áo khoác đều đẹp.",
+    tech: "Chần bông đa ngăn · Cổ đứng · Khóa kéo YKK", spec: { length: "Không tay", thickness: 2 },
+  },
+  trackPants,
+
+  jogger,
+
+  {
+    slug: "giay-dua-kinetic-carbon-elite-pro-v3", name: "Giày Đua Kinetic Carbon Elite Pro V3",
+    category: "giay", categoryLabel: "Flagship Racing", price: 3890000, oldPrice: 4500000, badge: "BESTSELLER",
+    image: I("p-shoe-carbon"), gallery: [I("p-shoe-carbon")], rating: 4.9, reviews: 1420, sizes: shoes,
+    description: "Tấm đệm carbon toàn bàn chân kết hợp foam siêu nhẹ hoàn trả năng lượng 87%, dành cho những ai muốn phá PB.",
+    tech: "Carbon plate · Foam hoàn trả 87% · Drop 8mm",
+  },
+  {
+    slug: "giay-chay-dia-hinh-terrex-gtx", name: "Giày Chạy Địa Hình Terrex Gore-Tex",
+    category: "giay", categoryLabel: "All-Terrain Gore-Tex", season: "thu", price: 3690000,
+    image: I("p-shoe-trail"), gallery: [I("p-shoe-trail"), I("autumn-hero")], rating: 4.8, reviews: 390, sizes: shoes,
+    description: "Màng Gore-Tex chống nước, đế Continental™ bám 6mm trên mọi địa hình ướt trơn.",
+    tech: "Gore-Tex · Continental™ · Grip 6mm",
+  },
+  airflow,
+  speedcat,
+
+  bag, cap,
+
+  // ===== Phiên bản màu =====
+  // Áo gió Packable
+  // Áo thun Heat.RDY
+  colorway(heatTee, { slug: "ao-thun-heat-rdy-aqua-violet", name: "Áo Thun Chạy Heat.RDY — Aqua Violet", image: I("p-tee-aqua-violet"), price: 950000, rating: 4.8, reviews: 142 }, "Aqua Violet"),
+  colorway(heatTee, { slug: "ao-thun-heat-rdy-aqua-rose", name: "Áo Thun Chạy Heat.RDY — Aqua Rose", image: I("p-tee-aqua-rose"), price: 950000, badge: "BESTSELLER", rating: 4.9, reviews: 188 }, "Aqua Rose"),
+  colorway(heatTee, { slug: "ao-thun-heat-rdy-pink-neon", name: "Áo Thun Chạy Heat.RDY — Pink Neon", image: I("p-tee-pink-neon"), price: 950000, oldPrice: 1190000, badge: "SALE", rating: 4.7, reviews: 121 }, "Pink Neon"),
+  colorway(heatTee, { slug: "ao-thun-heat-rdy-amber-mint", name: "Áo Thun Chạy Heat.RDY — Amber Mint", image: I("p-tee-amber-mint"), price: 950000, badge: "NEW DROP", rating: 4.8, reviews: 67 }, "Amber Mint"),
+  // Áo phao Thermo Puffer
+  colorway(puffer, { slug: "ao-phao-thermo-puffer-xanh-reu", name: "Áo Khoác Phao Thermo Puffer Bio-Down — Xanh Rêu", image: I("p-puffer-green"), price: 3490000, badge: "LIMITED DROP", rating: 4.9, reviews: 88 }, "Xanh Rêu"),
+  colorway(puffer, { slug: "ao-phao-thermo-puffer-xanh-ngoc", name: "Áo Khoác Phao Thermo Puffer Bio-Down — Xanh Ngọc", image: I("p-puffer-teal"), price: 3490000, rating: 4.8, reviews: 64 }, "Xanh Ngọc"),
+  colorway(puffer, { slug: "ao-phao-thermo-puffer-hong-dat", name: "Áo Khoác Phao Thermo Puffer Bio-Down — Hồng Đất", image: I("p-puffer-rose"), price: 3490000, oldPrice: 4290000, badge: "SALE", rating: 4.7, reviews: 52 }, "Hồng Đất"),
+  // Polo
+  // Giày Airflow Max
+  colorway(airflow, { slug: "giay-airflow-max-aqua-wave", name: "Giày Chạy Bộ Airflow Max — Aqua Wave", image: I("p-shoe-aqua"), badge: "NEW DROP", rating: 4.6, reviews: 52 }, "Aqua Wave"),
+  colorway(airflow, { slug: "giay-airflow-max-pink-pulse", name: "Giày Chạy Bộ Airflow Max — Pink Pulse", image: I("p-shoe-pink"), oldPrice: 2990000, badge: "SALE", rating: 4.7, reviews: 80 }, "Pink Pulse"),
+  colorway(airflow, { slug: "giay-airflow-max-coral-flame", name: "Giày Chạy Bộ Airflow Max — Coral Flame", image: I("p-shoe-coral"), rating: 4.6, reviews: 66 }, "Coral Flame"),
+  colorway(airflow, { slug: "giay-airflow-max-amber-glow", name: "Giày Chạy Bộ Airflow Max — Amber Glow", image: I("p-shoe-amber"), badge: "BESTSELLER", rating: 4.8, reviews: 92 }, "Amber Glow"),
+  // Ảnh do người dùng cung cấp
+  { slug: "ao-ni-indines-trang", name: "Áo Nỉ Cổ Tròn Indines — Trắng", category: "ao", categoryLabel: "Áo nỉ", season: "thu", price: 890000, badge: "NEW DROP",
+    image: I("p-sweat"), gallery: [I("p-sweat")], rating: 4.7, reviews: 36, sizes: clothing,
+    description: "Áo nỉ cổ tròn màu trắng, thêu chữ Indines nổi bật ở ngực, viền sọc đen chạy dọc hai tay, bo gấu và cổ tay co giãn tốt.",
+    tech: "Nỉ cotton · Thêu nổi · Bo gấu co giãn", spec: { length: "Dài tay", thickness: 2 } },
+  { slug: "quan-jeans-ong-suong-rach-goi", name: "Quần Jeans Ống Suông Rách Gối — Xanh Nhạt", category: "quan", categoryLabel: "Quần jeans", season: "ha", price: 790000, oldPrice: 990000, badge: "SALE",
+    image: I("p-jeans"), gallery: [I("p-jeans")], rating: 4.6, reviews: 58, sizes: clothing,
+    description: "Quần jeans lưng cao ống suông, wash xanh nhạt, rách gối cá tính, lai tua rua tự nhiên.",
+    tech: "Denim cotton · Lưng cao · Rách gối", spec: { length: "Dài", thickness: 2 } },
+  // Ba-lo
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-xanh-navy", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Xanh Navy", image: I("p-bag-navy"), price: 3200000, badge: "BESTSELLER", rating: 4.8, reviews: 61 }, "Xanh Navy"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-olive", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Olive", image: I("p-bag-olive"), price: 3200000, rating: 4.9, reviews: 47 }, "Olive"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-do-ruou", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Đỏ Rượu", image: I("p-bag-burgundy"), price: 3200000, oldPrice: 3600000, badge: "SALE", rating: 4.8, reviews: 73 }, "Đỏ Rượu"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-xam-khoi", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Xám Khói", image: I("p-bag-grey"), price: 3200000, badge: "LIMITED DROP", rating: 4.7, reviews: 39 }, "Xám Khói"),
+  // Áo khoác gió đua xe, Thermo Shield, Softshell
+  // Áo thun Audi Revolut F1
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-xanh-navy", name: "Áo Thun Audi Revolut F1® Team — Xanh Navy", image: I("p-tee-black-navy"), price: 890000, rating: 4.7, reviews: 96 }, "Xanh Navy"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-olive", name: "Áo Thun Audi Revolut F1® Team — Olive", image: I("p-tee-black-olive"), price: 890000, badge: "NEW DROP", rating: 4.6, reviews: 63 }, "Olive"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-do-ruou", name: "Áo Thun Audi Revolut F1® Team — Đỏ Rượu", image: I("p-tee-black-burgundy"), price: 890000, oldPrice: 1090000, badge: "SALE", rating: 4.8, reviews: 71 }, "Đỏ Rượu"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-xanh-co-vit", name: "Áo Thun Audi Revolut F1® Team — Xanh Cổ Vịt", image: I("p-tee-black-teal"), price: 890000, rating: 4.7, reviews: 58 }, "Xanh Cổ Vịt"),
+  // Polo
+  // Quần Track Pants & Jogger
+  // Thêm nhiều màu
+  colorway(speedcat, { slug: "giay-speedcat-pro-f1-xanh-navy", name: "Giày Speedcat Pro F1 Edition — Xanh Navy", image: I("p-speedcat-navy"), price: 3890000, badge: "NEW DROP", rating: 4.6, reviews: 104 }, "Xanh Navy"),
+  colorway(speedcat, { slug: "giay-speedcat-pro-f1-do-ruou", name: "Giày Speedcat Pro F1 Edition — Đỏ Rượu", image: I("p-speedcat-burgundy"), price: 3890000, badge: "LIMITED DROP", rating: 4.8, reviews: 127 }, "Đỏ Rượu"),
+  colorway(speedcat, { slug: "giay-speedcat-pro-f1-olive", name: "Giày Speedcat Pro F1 Edition — Olive", image: I("p-speedcat-olive"), price: 3890000, rating: 4.5, reviews: 150 }, "Olive"),
+  colorway(speedcat, { slug: "giay-speedcat-pro-f1-xam-khoi", name: "Giày Speedcat Pro F1 Edition — Xám Khói", image: I("p-speedcat-grey"), price: 3890000, oldPrice: 4390000, badge: "SALE", rating: 4.7, reviews: 173 }, "Xám Khói"),
+  colorway(airflow, { slug: "giay-airflow-max-emerald-green", name: "Giày Chạy Bộ Airflow Max — Emerald Green", image: I("p-shoe-h30"), price: 2590000, badge: "BESTSELLER", rating: 4.9, reviews: 141 }, "Emerald Green"),
+  colorway(airflow, { slug: "giay-airflow-max-mint-jade", name: "Giày Chạy Bộ Airflow Max — Mint Jade", image: I("p-shoe-h60"), price: 2590000, rating: 4.6, reviews: 164 }, "Mint Jade"),
+  colorway(airflow, { slug: "giay-airflow-max-violet-haze", name: "Giày Chạy Bộ Airflow Max — Violet Haze", image: I("p-shoe-h180"), price: 2590000, badge: "NEW DROP", rating: 4.8, reviews: 187 }, "Violet Haze"),
+  colorway(airflow, { slug: "giay-airflow-max-magenta-rush", name: "Giày Chạy Bộ Airflow Max — Magenta Rush", image: I("p-shoe-h240"), price: 2590000, oldPrice: 2990000, badge: "SALE", rating: 4.5, reviews: 210 }, "Magenta Rush"),
+  colorway(airflow, { slug: "giay-airflow-max-orange-burst", name: "Giày Chạy Bộ Airflow Max — Orange Burst", image: I("p-shoe-h300"), price: 2590000, rating: 4.7, reviews: 43 }, "Orange Burst"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-xanh-duong", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Xanh Dương", image: I("p-bag-royal"), price: 3200000, rating: 4.7, reviews: 178 }, "Xanh Dương"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-xanh-co-vit", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Xanh Cổ Vịt", image: I("p-bag-teal"), price: 3200000, rating: 4.9, reviews: 201 }, "Xanh Cổ Vịt"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-xanh-la", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Xanh Lá", image: I("p-bag-forest"), price: 3200000, badge: "NEW DROP", rating: 4.6, reviews: 34 }, "Xanh Lá"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-nau-dat", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Nâu Đất", image: I("p-bag-brown"), price: 3200000, rating: 4.8, reviews: 57 }, "Nâu Đất"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-tim-man", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Tím Mận", image: I("p-bag-plum"), price: 3200000, badge: "LIMITED DROP", rating: 4.5, reviews: 80 }, "Tím Mận"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-xanh-co-vit", name: "Mũ Lưỡi Trai Audi F1 Team — Xanh Cổ Vịt", image: I("p-cap-teal"), price: 650000, rating: 4.5, reviews: 215 }, "Xanh Cổ Vịt"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-xanh-duong", name: "Mũ Lưỡi Trai Audi F1 Team — Xanh Dương", image: I("p-cap-royal"), price: 650000, badge: "BESTSELLER", rating: 4.7, reviews: 48 }, "Xanh Dương"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-xanh-la", name: "Mũ Lưỡi Trai Audi F1 Team — Xanh Lá", image: I("p-cap-forest"), price: 650000, rating: 4.9, reviews: 71 }, "Xanh Lá"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-nau-dat", name: "Mũ Lưỡi Trai Audi F1 Team — Nâu Đất", image: I("p-cap-brown"), price: 650000, rating: 4.6, reviews: 94 }, "Nâu Đất"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-tim-man", name: "Mũ Lưỡi Trai Audi F1 Team — Tím Mận", image: I("p-cap-plum"), price: 650000, badge: "NEW DROP", rating: 4.8, reviews: 117 }, "Tím Mận"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-xanh-la", name: "Áo Thun Audi Revolut F1® Team — Xanh Lá", image: I("p-tee-black-forest"), price: 890000, badge: "NEW DROP", rating: 4.8, reviews: 122 }, "Xanh Lá"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-tim-man", name: "Áo Thun Audi Revolut F1® Team — Tím Mận", image: I("p-tee-black-plum"), price: 890000, rating: 4.5, reviews: 145 }, "Tím Mận"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-nau-dat", name: "Áo Thun Audi Revolut F1® Team — Nâu Đất", image: I("p-tee-black-brown"), price: 890000, oldPrice: 1090000, badge: "SALE", rating: 4.7, reviews: 168 }, "Nâu Đất"),
+  // Mũ
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-xanh-navy", name: "Mũ Lưỡi Trai Audi F1 Team — Xanh Navy", image: I("p-cap-navy"), price: 650000, badge: "NEW DROP", rating: 4.8, reviews: 88 }, "Xanh Navy"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-olive", name: "Mũ Lưỡi Trai Audi F1 Team — Olive", image: I("p-cap-olive"), price: 650000, rating: 4.7, reviews: 72 }, "Olive"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-do-ruou", name: "Mũ Lưỡi Trai Audi F1 Team — Đỏ Rượu", image: I("p-cap-burgundy"), price: 650000, rating: 4.7, reviews: 65 }, "Đỏ Rượu"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-xam-khoi", name: "Mũ Lưỡi Trai Audi F1 Team — Xám Khói", image: I("p-cap-grey"), price: 650000, rating: 4.6, reviews: 54 }, "Xám Khói"),
+  colorway(ptFoxSand, { slug: "quan-motocross-fox-180-be-neon-xanh-reu", name: "Quần Motocross Fox 180 — Xanh Rêu", image: I("p-pt-fox-sand-olive"), price: 1890000, rating: 4.6, reviews: 53 }, "Xanh Rêu"),
+  colorway(ptFoxSand, { slug: "quan-motocross-fox-180-be-neon-xanh-duong", name: "Quần Motocross Fox 180 — Xanh Dương", image: I("p-pt-fox-sand-navy"), price: 1890000, rating: 4.7, reviews: 66 }, "Xanh Dương"),
+  colorway(ptFoxSand, { slug: "quan-motocross-fox-180-be-neon-do-ruou", name: "Quần Motocross Fox 180 — Đỏ Rượu", image: I("p-pt-fox-sand-burgundy"), price: 1890000, rating: 4.8, reviews: 79 }, "Đỏ Rượu"),
+  colorway(ptFoxSand, { slug: "quan-motocross-fox-180-be-neon-xanh-ngoc", name: "Quần Motocross Fox 180 — Xanh Ngọc", image: I("p-pt-fox-sand-teal"), price: 1890000, rating: 4.9, reviews: 92, oldPrice: 2090000, badge: "SALE" }, "Xanh Ngọc"),
+  colorway(ptFoxBw, { slug: "quan-motocross-fox-180-den-trang-den-do", name: "Quần Motocross Fox 180 — Đen Đỏ", image: I("p-pt-fox-bw-red"), price: 1890000, rating: 4.5, reviews: 105, badge: "NEW DROP" }, "Đen Đỏ"),
+  colorway(ptFoxBw, { slug: "quan-motocross-fox-180-den-trang-den-xanh-duong", name: "Quần Motocross Fox 180 — Đen Xanh Dương", image: I("p-pt-fox-bw-blue"), price: 1890000, rating: 4.6, reviews: 118 }, "Đen Xanh Dương"),
+  colorway(ptFoxBw, { slug: "quan-motocross-fox-180-den-trang-den-cam", name: "Quần Motocross Fox 180 — Đen Cam", image: I("p-pt-fox-bw-orange"), price: 1890000, rating: 4.7, reviews: 131 }, "Đen Cam"),
+  colorway(ptFoxBw, { slug: "quan-motocross-fox-180-den-trang-den-xanh-la", name: "Quần Motocross Fox 180 — Đen Xanh Lá", image: I("p-pt-fox-bw-green"), price: 1890000, rating: 4.8, reviews: 144, oldPrice: 2090000, badge: "SALE" }, "Đen Xanh Lá"),
+  colorway(ptCycling, { slug: "bo-do-dap-xe-nu-tay-dai-hong-tim-xanh-duong", name: "Bộ Đồ Đạp Xe Nữ Tay Dài — Xanh Dương", image: I("p-pt-cycling-set-blue"), price: 1490000, rating: 4.9, reviews: 157 }, "Xanh Dương"),
+  colorway(ptCycling, { slug: "bo-do-dap-xe-nu-tay-dai-hong-tim-xanh-ngoc", name: "Bộ Đồ Đạp Xe Nữ Tay Dài — Xanh Ngọc", image: I("p-pt-cycling-set-teal"), price: 1490000, rating: 4.5, reviews: 170, badge: "NEW DROP" }, "Xanh Ngọc"),
+  colorway(ptCycling, { slug: "bo-do-dap-xe-nu-tay-dai-hong-tim-xanh-la", name: "Bộ Đồ Đạp Xe Nữ Tay Dài — Xanh Lá", image: I("p-pt-cycling-set-green"), price: 1490000, rating: 4.6, reviews: 183 }, "Xanh Lá"),
+  colorway(ptCycling, { slug: "bo-do-dap-xe-nu-tay-dai-hong-tim-cam-dao", name: "Bộ Đồ Đạp Xe Nữ Tay Dài — Cam Đào", image: I("p-pt-cycling-set-orange"), price: 1490000, rating: 4.7, reviews: 196, oldPrice: 1690000, badge: "SALE" }, "Cam Đào"),
+  colorway(ptCycling, { slug: "bo-do-dap-xe-nu-tay-dai-hong-tim-vang-nghe", name: "Bộ Đồ Đạp Xe Nữ Tay Dài — Vàng Nghệ", image: I("p-pt-cycling-set-yellow"), price: 1490000, rating: 4.8, reviews: 209 }, "Vàng Nghệ"),
+  colorway(teeCycling, { slug: "ao-dap-xe-cycling-club-jersey-xanh-duong", name: "Áo Đạp Xe Cycling Club Jersey — Xanh Dương", image: I("p-tee-cycling-blue"), price: 690000, rating: 4.6, reviews: 41 }, "Xanh Dương"),
+  colorway(teeCycling, { slug: "ao-dap-xe-cycling-club-jersey-xanh-la", name: "Áo Đạp Xe Cycling Club Jersey — Xanh Lá", image: I("p-tee-cycling-green"), price: 690000, rating: 4.7, reviews: 52 }, "Xanh Lá"),
+  colorway(teeCycling, { slug: "ao-dap-xe-cycling-club-jersey-xanh-ngoc", name: "Áo Đạp Xe Cycling Club Jersey — Xanh Ngọc", image: I("p-tee-cycling-teal"), price: 690000, rating: 4.8, reviews: 63 }, "Xanh Ngọc"),
+  colorway(teeCycling, { slug: "ao-dap-xe-cycling-club-jersey-vang-olive", name: "Áo Đạp Xe Cycling Club Jersey — Vàng Olive", image: I("p-tee-cycling-yellow"), price: 690000, rating: 4.9, reviews: 74, oldPrice: 890000, badge: "SALE" }, "Vàng Olive"),
+  colorway(teeRed, { slug: "ao-thun-the-thao-phoi-den-do-gach-xanh-duong", name: "Áo Thun Thể Thao Phối Đen — Xanh Dương", image: I("p-tee-model-red-navy"), price: 590000, rating: 4.5, reviews: 85, badge: "NEW DROP" }, "Xanh Dương"),
+  colorway(teeRed, { slug: "ao-thun-the-thao-phoi-den-do-gach-xanh-la", name: "Áo Thun Thể Thao Phối Đen — Xanh Lá", image: I("p-tee-model-red-forest"), price: 590000, rating: 4.6, reviews: 96 }, "Xanh Lá"),
+  colorway(teeRed, { slug: "ao-thun-the-thao-phoi-den-do-gach-cam-dat", name: "Áo Thun Thể Thao Phối Đen — Cam Đất", image: I("p-tee-model-red-orange"), price: 590000, rating: 4.7, reviews: 107 }, "Cam Đất"),
+  colorway(teeRed, { slug: "ao-thun-the-thao-phoi-den-do-gach-tim", name: "Áo Thun Thể Thao Phối Đen — Tím", image: I("p-tee-model-red-purple"), price: 590000, rating: 4.8, reviews: 118, oldPrice: 790000, badge: "SALE" }, "Tím"),
+  colorway(teeAston, { slug: "ao-thun-dua-xe-aston-martin-f1-team-xanh-duong", name: "Áo Thun Đua Xe F1 Team — Xanh Dương", image: I("p-tee-aston-green-blue"), price: 1190000, rating: 4.9, reviews: 129 }, "Xanh Dương"),
+  colorway(teeAston, { slug: "ao-thun-dua-xe-aston-martin-f1-team-do-ruou", name: "Áo Thun Đua Xe F1 Team — Đỏ Rượu", image: I("p-tee-aston-green-red"), price: 1190000, rating: 4.5, reviews: 140, badge: "NEW DROP" }, "Đỏ Rượu"),
+  colorway(teeAston, { slug: "ao-thun-dua-xe-aston-martin-f1-team-tim", name: "Áo Thun Đua Xe F1 Team — Tím", image: I("p-tee-aston-green-purple"), price: 1190000, rating: 4.6, reviews: 151 }, "Tím"),
+  colorway(teeAston, { slug: "ao-thun-dua-xe-aston-martin-f1-team-nau-cam", name: "Áo Thun Đua Xe F1 Team — Nâu Cam", image: I("p-tee-aston-green-orange"), price: 1190000, rating: 4.7, reviews: 162, oldPrice: 1390000, badge: "SALE" }, "Nâu Cam"),
+  colorway(poloFerrari, { slug: "ao-polo-doi-dua-scuderia-ferrari-do-xanh-duong", name: "Áo Polo Đội Đua F1 Team — Xanh Dương", image: I("p-polo-ferrari-blue"), price: 1590000, rating: 4.8, reviews: 173 }, "Xanh Dương"),
+  colorway(poloFerrari, { slug: "ao-polo-doi-dua-scuderia-ferrari-do-xanh-la", name: "Áo Polo Đội Đua F1 Team — Xanh Lá", image: I("p-polo-ferrari-green"), price: 1590000, rating: 4.9, reviews: 184 }, "Xanh Lá"),
+  colorway(bgJogarbola, { slug: "balo-pickleball-jogarbola-xanh-navy-xanh-la", name: "Balo Pickleball Jogarbola — Xanh Lá", image: I("p-bg-jogarbola-green"), price: 1190000, rating: 4.6, reviews: 34 }, "Xanh Lá"),
+  colorway(bgJogarbola, { slug: "balo-pickleball-jogarbola-xanh-navy-nau-cam", name: "Balo Pickleball Jogarbola — Nâu Cam", image: I("p-bg-jogarbola-orange"), price: 1190000, rating: 4.7, reviews: 43 }, "Nâu Cam"),
+  colorway(bgJogarbola, { slug: "balo-pickleball-jogarbola-xanh-navy-tim", name: "Balo Pickleball Jogarbola — Tím", image: I("p-bg-jogarbola-purple"), price: 1190000, rating: 4.8, reviews: 52 }, "Tím"),
+  colorway(bgJogarbola, { slug: "balo-pickleball-jogarbola-xanh-navy-den-xam", name: "Balo Pickleball Jogarbola — Đen Xám", image: I("p-bg-jogarbola-black"), price: 1190000, rating: 4.9, reviews: 61, oldPrice: 1390000, badge: "SALE" }, "Đen Xám"),
+  colorway(bgAcg, { slug: "balo-roll-top-outdoor-acg-den-day-xanh-la", name: "Balo Roll-Top Outdoor ACG — Dây Xanh Lá", image: I("p-bg-acg-green"), price: 1590000, rating: 4.5, reviews: 70 }, "Dây Xanh Lá"),
+  colorway(bgAcg, { slug: "balo-roll-top-outdoor-acg-den-day-cam", name: "Balo Roll-Top Outdoor ACG — Dây Cam", image: I("p-bg-acg-orange"), price: 1590000, rating: 4.6, reviews: 79 }, "Dây Cam"),
+  colorway(bgAcg, { slug: "balo-roll-top-outdoor-acg-den-day-xanh-duong", name: "Balo Roll-Top Outdoor ACG — Dây Xanh Dương", image: I("p-bg-acg-blue"), price: 1590000, rating: 4.7, reviews: 88 }, "Dây Xanh Dương"),
+  colorway(bgAcg, { slug: "balo-roll-top-outdoor-acg-den-day-hong", name: "Balo Roll-Top Outdoor ACG — Dây Hồng", image: I("p-bg-acg-pink"), price: 1590000, rating: 4.8, reviews: 97, oldPrice: 1790000, badge: "SALE" }, "Dây Hồng"),
+  colorway(bgKamito, { slug: "tui-pickleball-kamito-elite-tour-v3-xanh-duong", name: "Túi Pickleball Kamito Elite Tour V3 — Xanh Dương", image: I("p-bg-kamito-blue"), price: 2290000, rating: 4.9, reviews: 106 }, "Xanh Dương"),
+  colorway(bgKamito, { slug: "tui-pickleball-kamito-elite-tour-v3-xanh-la", name: "Túi Pickleball Kamito Elite Tour V3 — Xanh Lá", image: I("p-bg-kamito-green"), price: 2290000, rating: 4.5, reviews: 115 }, "Xanh Lá"),
+  colorway(bgKamito, { slug: "tui-pickleball-kamito-elite-tour-v3-cam-nau", name: "Túi Pickleball Kamito Elite Tour V3 — Cam Nâu", image: I("p-bg-kamito-orange"), price: 2290000, rating: 4.6, reviews: 124 }, "Cam Nâu"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-xanh-chuoi", name: "Mũ Lưỡi Trai Audi F1 Team — Xanh Chuối", image: I("p-cap-lime"), price: 650000, rating: 4.6, reviews: 87 }, "Xanh Chuối"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-cam", name: "Mũ Lưỡi Trai Audi F1 Team — Cam", image: I("p-cap-orange"), price: 650000, rating: 4.7, reviews: 94 }, "Cam"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-hong", name: "Mũ Lưỡi Trai Audi F1 Team — Hồng", image: I("p-cap-pink"), price: 650000, rating: 4.8, reviews: 101 }, "Hồng"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-xanh-troi", name: "Mũ Lưỡi Trai Audi F1 Team — Xanh Trời", image: I("p-cap-sky"), price: 650000, rating: 4.9, reviews: 108, oldPrice: 731000, badge: "SALE" }, "Xanh Trời"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-do", name: "Mũ Lưỡi Trai Audi F1 Team — Đỏ", image: I("p-cap-red"), price: 650000, rating: 4.5, reviews: 115, badge: "NEW DROP" }, "Đỏ"),
+  colorway(cap, { slug: "mu-luoi-trai-audi-f1-team-vang-nghe", name: "Mũ Lưỡi Trai Audi F1 Team — Vàng Nghệ", image: I("p-cap-yellow"), price: 650000, rating: 4.6, reviews: 122 }, "Vàng Nghệ"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-xanh-chuoi", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Xanh Chuối", image: I("p-bag-lime"), price: 3200000, rating: 4.7, reviews: 129 }, "Xanh Chuối"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-cam", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Cam", image: I("p-bag-orange"), price: 3200000, rating: 4.8, reviews: 136, oldPrice: 3600000, badge: "SALE" }, "Cam"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-hong", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Hồng", image: I("p-bag-pink"), price: 3200000, rating: 4.9, reviews: 143 }, "Hồng"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-xanh-troi", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Xanh Trời", image: I("p-bag-sky"), price: 3200000, rating: 4.5, reviews: 150 }, "Xanh Trời"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-do", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Đỏ", image: I("p-bag-red"), price: 3200000, rating: 4.6, reviews: 157 }, "Đỏ"),
+  colorway(bag, { slug: "balo-roll-top-audi-revolut-f1-vang-nghe", name: "Ba-lo Roll-Top Hybrid Audi Revolut F1® — Vàng Nghệ", image: I("p-bag-yellow"), price: 3200000, rating: 4.7, reviews: 164, oldPrice: 3600000, badge: "SALE" }, "Vàng Nghệ"),
+  colorway(speedcat, { slug: "giay-speedcat-pro-f1-cam", name: "Giày Speedcat Pro F1 Edition — Cam", image: I("p-speedcat-orange"), price: 3890000, rating: 4.8, reviews: 171 }, "Cam"),
+  colorway(speedcat, { slug: "giay-speedcat-pro-f1-hong", name: "Giày Speedcat Pro F1 Edition — Hồng", image: I("p-speedcat-pink"), price: 3890000, rating: 4.9, reviews: 178 }, "Hồng"),
+  colorway(speedcat, { slug: "giay-speedcat-pro-f1-xanh-troi", name: "Giày Speedcat Pro F1 Edition — Xanh Trời", image: I("p-speedcat-sky"), price: 3890000, rating: 4.5, reviews: 25 }, "Xanh Trời"),
+  colorway(speedcat, { slug: "giay-speedcat-pro-f1-vang-nghe", name: "Giày Speedcat Pro F1 Edition — Vàng Nghệ", image: I("p-speedcat-yellow"), price: 3890000, rating: 4.6, reviews: 32, oldPrice: 4376000, badge: "SALE" }, "Vàng Nghệ"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-vang-nghe", name: "Áo Thun Audi Revolut F1® Team — Vàng Nghệ", image: I("p-tee-black-gold"), price: 890000, rating: 4.7, reviews: 39 }, "Vàng Nghệ"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-cam", name: "Áo Thun Audi Revolut F1® Team — Cam", image: I("p-tee-black-orange"), price: 890000, rating: 4.8, reviews: 46 }, "Cam"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-hong", name: "Áo Thun Audi Revolut F1® Team — Hồng", image: I("p-tee-black-pink"), price: 890000, rating: 4.9, reviews: 53, badge: "NEW DROP" }, "Hồng"),
+  colorway(teeBlack, { slug: "ao-thun-audi-revolut-f1-xanh-troi", name: "Áo Thun Audi Revolut F1® Team — Xanh Trời", image: I("p-tee-black-sky"), price: 890000, rating: 4.5, reviews: 60, oldPrice: 1001000, badge: "SALE" }, "Xanh Trời"),
+  colorway(heatTee, { slug: "ao-thun-heat-rdy-cyan-lavender", name: "Áo Thun Chạy Heat.RDY — Cyan Lavender", image: I("p-tee-volt-x120"), price: 950000, rating: 4.6, reviews: 67 }, "Cyan Lavender"),
+  colorway(heatTee, { slug: "ao-thun-heat-rdy-pink-lime", name: "Áo Thun Chạy Heat.RDY — Pink Lime", image: I("p-tee-volt-x270"), price: 950000, rating: 4.7, reviews: 74 }, "Pink Lime"),
+  colorway(heatTee, { slug: "ao-thun-heat-rdy-mint-sky", name: "Áo Thun Chạy Heat.RDY — Mint Sky", image: I("p-tee-volt-x60"), price: 950000, rating: 4.8, reviews: 81 }, "Mint Sky"),
+  colorway(puffer, { slug: "ao-phao-thermo-puffer-hong-lavender", name: "Áo Khoác Phao Thermo Puffer Bio-Down — Hồng Lavender", image: I("p-puffer-x100"), price: 3490000, rating: 4.9, reviews: 88, oldPrice: 3926000, badge: "SALE" }, "Hồng Lavender"),
+  colorway(puffer, { slug: "ao-phao-thermo-puffer-be-xanh-reu", name: "Áo Khoác Phao Thermo Puffer Bio-Down — Be Xanh Rêu", image: I("p-puffer-x200"), price: 3490000, rating: 4.5, reviews: 95 }, "Be Xanh Rêu"),
+  colorway(puffer, { slug: "ao-phao-thermo-puffer-xanh-tim", name: "Áo Khoác Phao Thermo Puffer Bio-Down — Xanh Tím", image: I("p-puffer-x40"), price: 3490000, rating: 4.6, reviews: 102, badge: "NEW DROP" }, "Xanh Tím"),
+  colorway(teeCycling, { slug: "ao-dap-xe-cycling-club-jersey-hong-tim", name: "Áo Đạp Xe Cycling Club Jersey — Hồng Tím", image: I("p-tee-cycling-x300"), price: 690000, rating: 4.7, reviews: 109 }, "Hồng Tím"),
+  colorway(teeCycling, { slug: "ao-dap-xe-cycling-club-jersey-cam", name: "Áo Đạp Xe Cycling Club Jersey — Cam", image: I("p-tee-cycling-x40"), price: 690000, rating: 4.8, reviews: 116, oldPrice: 776000, badge: "SALE" }, "Cam"),
+  colorway(teeCycling, { slug: "ao-dap-xe-cycling-club-jersey-xanh-la-ma", name: "Áo Đạp Xe Cycling Club Jersey — Xanh Lá Mạ", image: I("p-tee-cycling-x90"), price: 690000, rating: 4.9, reviews: 123 }, "Xanh Lá Mạ"),
+  colorway(ptCycling, { slug: "bo-do-dap-xe-nu-tay-dai-hong-tim-vang-cam", name: "Bộ Đồ Đạp Xe Nữ Tay Dài — Vàng Cam", image: I("p-pt-cycling-set-x100"), price: 1490000, rating: 4.5, reviews: 130 }, "Vàng Cam"),
+  colorway(ptCycling, { slug: "bo-do-dap-xe-nu-tay-dai-hong-tim-xanh-bien", name: "Bộ Đồ Đạp Xe Nữ Tay Dài — Xanh Biển", image: I("p-pt-cycling-set-x230"), price: 1490000, rating: 4.6, reviews: 137 }, "Xanh Biển"),
+  colorway(ptCycling, { slug: "bo-do-dap-xe-nu-tay-dai-hong-tim-tim-lam", name: "Bộ Đồ Đạp Xe Nữ Tay Dài — Tím Lam", image: I("p-pt-cycling-set-x300"), price: 1490000, rating: 4.7, reviews: 144, oldPrice: 1676000, badge: "SALE" }, "Tím Lam"),
+  colorway(bgKamito, { slug: "tui-pickleball-kamito-elite-tour-v3-tim-lam", name: "Túi Pickleball Kamito Elite Tour V3 — Tím Lam", image: I("p-bg-kamito-x270"), price: 2290000, rating: 4.8, reviews: 151, badge: "NEW DROP" }, "Tím Lam"),
+  colorway(bgKamito, { slug: "tui-pickleball-kamito-elite-tour-v3-hong-dam", name: "Túi Pickleball Kamito Elite Tour V3 — Hồng Đậm", image: I("p-bg-kamito-x330"), price: 2290000, rating: 4.9, reviews: 158 }, "Hồng Đậm"),
+  colorway(bgJogarbola, { slug: "balo-pickleball-jogarbola-xanh-navy-xanh-ngoc", name: "Balo Pickleball Jogarbola — Xanh Ngọc", image: I("p-bg-jogarbola-x330"), price: 1190000, rating: 4.5, reviews: 165 }, "Xanh Ngọc"),
+  colorway(bgJogarbola, { slug: "balo-pickleball-jogarbola-xanh-navy-do-ruou", name: "Balo Pickleball Jogarbola — Đỏ Rượu", image: I("p-bg-jogarbola-x90"), price: 1190000, rating: 4.6, reviews: 172, oldPrice: 1338000, badge: "SALE" }, "Đỏ Rượu"),
+  colorway(bgAcg, { slug: "balo-roll-top-outdoor-acg-den-day-do", name: "Balo Roll-Top Outdoor ACG — Dây Đỏ", image: I("p-bg-acg-red"), price: 1590000, rating: 4.7, reviews: 179 }, "Dây Đỏ"),
+  colorway(bgAcg, { slug: "balo-roll-top-outdoor-acg-den-day-vang", name: "Balo Roll-Top Outdoor ACG — Dây Vàng", image: I("p-bg-acg-yellow"), price: 1590000, rating: 4.8, reviews: 26 }, "Dây Vàng"),
+  colorway(teeRed, { slug: "ao-thun-the-thao-phoi-den-do-gach-vang-mu-tat", name: "Áo Thun Thể Thao Phối Đen — Vàng Mù Tạt", image: I("p-tee-model-red-mustard"), price: 590000, rating: 4.9, reviews: 33 }, "Vàng Mù Tạt"),
+  colorway(teeRed, { slug: "ao-thun-the-thao-phoi-den-do-gach-hong-dam", name: "Áo Thun Thể Thao Phối Đen — Hồng Đậm", image: I("p-tee-model-red-pink"), price: 590000, rating: 4.5, reviews: 40, oldPrice: 663000, badge: "SALE" }, "Hồng Đậm"),
+  colorway(teeRed, { slug: "ao-thun-the-thao-phoi-den-do-gach-xanh-ngoc", name: "Áo Thun Thể Thao Phối Đen — Xanh Ngọc", image: I("p-tee-model-red-teal"), price: 590000, rating: 4.6, reviews: 47 }, "Xanh Ngọc"),
+  colorway(teeAston, { slug: "ao-thun-dua-xe-aston-martin-f1-team-xanh-bien", name: "Áo Thun Đua Xe F1 Team — Xanh Biển", image: I("p-tee-aston-green-cyan"), price: 1190000, rating: 4.7, reviews: 54 }, "Xanh Biển"),
+  colorway(teeAston, { slug: "ao-thun-dua-xe-aston-martin-f1-team-vang-olive", name: "Áo Thun Đua Xe F1 Team — Vàng Olive", image: I("p-tee-aston-green-mustard"), price: 1190000, rating: 4.8, reviews: 61 }, "Vàng Olive"),
+  colorway(teeAston, { slug: "ao-thun-dua-xe-aston-martin-f1-team-do-man", name: "Áo Thun Đua Xe F1 Team — Đỏ Mận", image: I("p-tee-aston-green-pink"), price: 1190000, rating: 4.9, reviews: 68, oldPrice: 1338000, badge: "SALE" }, "Đỏ Mận"),
+  colorway(poloFerrari, { slug: "ao-polo-doi-dua-scuderia-ferrari-do-cam", name: "Áo Polo Đội Đua F1 Team — Cam", image: I("p-polo-ferrari-orange"), price: 1590000, rating: 4.5, reviews: 75 }, "Cam"),
+  colorway(poloFerrari, { slug: "ao-polo-doi-dua-scuderia-ferrari-do-tim", name: "Áo Polo Đội Đua F1 Team — Tím", image: I("p-polo-ferrari-purple"), price: 1590000, rating: 4.6, reviews: 82 }, "Tím"),
+  colorway(poloFerrari, { slug: "ao-polo-doi-dua-scuderia-ferrari-do-xanh-ngoc", name: "Áo Polo Đội Đua F1 Team — Xanh Ngọc", image: I("p-polo-ferrari-teal"), price: 1590000, rating: 4.7, reviews: 89, badge: "NEW DROP" }, "Xanh Ngọc"),
+  colorway(shWhite, { slug: "giay-sneaker-chunky-trang-xam-hong-pastel", name: "Giày Sneaker Đế Chunky — Hồng Pastel", image: I("p-sh-white-pink"), price: 1290000, rating: 4.6, reviews: 141 }, "Hồng Pastel"),
+  colorway(shWhite, { slug: "giay-sneaker-chunky-trang-xam-xanh-troi", name: "Giày Sneaker Đế Chunky — Xanh Trời", image: I("p-sh-white-sky"), price: 1290000, rating: 4.7, reviews: 152 }, "Xanh Trời"),
+  colorway(shWhite, { slug: "giay-sneaker-chunky-trang-xam-xanh-mint", name: "Giày Sneaker Đế Chunky — Xanh Mint", image: I("p-sh-white-mint"), price: 1290000, rating: 4.8, reviews: 163 }, "Xanh Mint"),
+  colorway(shWhite, { slug: "giay-sneaker-chunky-trang-xam-tim-lilac", name: "Giày Sneaker Đế Chunky — Tím Lilac", image: I("p-sh-white-lilac"), price: 1290000, rating: 4.9, reviews: 174, oldPrice: 1490000, badge: "SALE" }, "Tím Lilac"),
+  colorway(shWhite, { slug: "giay-sneaker-chunky-trang-xam-cam-dao", name: "Giày Sneaker Đế Chunky — Cam Đào", image: I("p-sh-white-peach"), price: 1290000, rating: 4.5, reviews: 35 }, "Cam Đào"),
+  colorway(shWhite, { slug: "giay-sneaker-chunky-trang-xam-vang-chanh", name: "Giày Sneaker Đế Chunky — Vàng Chanh", image: I("p-sh-white-yellow"), price: 1290000, rating: 4.6, reviews: 46 }, "Vàng Chanh"),
+  colorway(shMint, { slug: "giay-sneaker-luoi-mint-boost-hong-phan", name: "Giày Sneaker Lưới Boost — Hồng Phấn", image: I("p-sh-mint-pink"), price: 1590000, rating: 4.7, reviews: 57 }, "Hồng Phấn"),
+  colorway(shMint, { slug: "giay-sneaker-luoi-mint-boost-xanh-tim", name: "Giày Sneaker Lưới Boost — Xanh Tím", image: I("p-sh-mint-lilac"), price: 1590000, rating: 4.8, reviews: 68, oldPrice: 1790000, badge: "SALE" }, "Xanh Tím"),
+  colorway(shMint, { slug: "giay-sneaker-luoi-mint-boost-cam-hong", name: "Giày Sneaker Lưới Boost — Cam Hồng", image: I("p-sh-mint-peach"), price: 1590000, rating: 4.9, reviews: 79 }, "Cam Hồng"),
+  colorway(shMint, { slug: "giay-sneaker-luoi-mint-boost-vang-chanh", name: "Giày Sneaker Lưới Boost — Vàng Chanh", image: I("p-sh-mint-yellow"), price: 1590000, rating: 4.5, reviews: 90 }, "Vàng Chanh"),
+  colorway(shMint, { slug: "giay-sneaker-luoi-mint-boost-xanh-bang", name: "Giày Sneaker Lưới Boost — Xanh Băng", image: I("p-sh-mint-sky"), price: 1590000, rating: 4.6, reviews: 101 }, "Xanh Băng"),
+  colorway(shMint, { slug: "giay-sneaker-luoi-mint-boost-hong-tim", name: "Giày Sneaker Lưới Boost — Hồng Tím", image: I("p-sh-mint-rose"), price: 1590000, rating: 4.7, reviews: 112, oldPrice: 1790000, badge: "SALE" }, "Hồng Tím"),
+  colorway(shKnit, { slug: "giay-luoi-slip-on-det-den-xam-xanh-navy", name: "Giày Lười Slip-On Vải Dệt — Xanh Navy", image: I("p-sh-knit-navy"), price: 790000, rating: 4.8, reviews: 123 }, "Xanh Navy"),
+  colorway(shKnit, { slug: "giay-luoi-slip-on-det-den-xam-do-ruou", name: "Giày Lười Slip-On Vải Dệt — Đỏ Rượu", image: I("p-sh-knit-red"), price: 790000, rating: 4.9, reviews: 134 }, "Đỏ Rượu"),
+  colorway(shKnit, { slug: "giay-luoi-slip-on-det-den-xam-xanh-la", name: "Giày Lười Slip-On Vải Dệt — Xanh Lá", image: I("p-sh-knit-forest"), price: 790000, rating: 4.5, reviews: 145 }, "Xanh Lá"),
+  colorway(shKnit, { slug: "giay-luoi-slip-on-det-den-xam-nau", name: "Giày Lười Slip-On Vải Dệt — Nâu", image: I("p-sh-knit-brown"), price: 790000, rating: 4.6, reviews: 156, oldPrice: 990000, badge: "SALE" }, "Nâu"),
+  colorway(shKnit, { slug: "giay-luoi-slip-on-det-den-xam-cam", name: "Giày Lười Slip-On Vải Dệt — Cam", image: I("p-sh-knit-orange"), price: 790000, rating: 4.7, reviews: 167 }, "Cam"),
+  colorway(shKnit, { slug: "giay-luoi-slip-on-det-den-xam-tim-man", name: "Giày Lười Slip-On Vải Dệt — Tím Mận", image: I("p-sh-knit-plum"), price: 790000, rating: 4.8, reviews: 178 }, "Tím Mận"),
+  colorway(mCapLA, { slug: "mu-luoi-trai-la-cam-dat-xanh-ngoc", name: "Mũ Lưỡi Trai LA — Xanh Ngọc", image: I("p-mau-s01-xanh"), price: 450000, rating: 4.7, reviews: 51 }, "Xanh Ngọc"),
+  colorway(mCapLA, { slug: "mu-luoi-trai-la-cam-dat-hong-tim", name: "Mũ Lưỡi Trai LA — Hồng Tím", image: I("p-mau-s01-hong"), price: 450000, rating: 4.8, reviews: 64 }, "Hồng Tím"),
+  colorway(mBagKeefly, { slug: "balo-mini-the-thao-keepfly-do-xanh-duong", name: "Balo Mini Thể Thao Keepfly — Xanh Dương", image: I("p-mau-s02-navy"), price: 390000, rating: 4.9, reviews: 77 }, "Xanh Dương"),
+  colorway(mBagKeefly, { slug: "balo-mini-the-thao-keepfly-do-xanh-la", name: "Balo Mini Thể Thao Keepfly — Xanh Lá", image: I("p-mau-s02-green"), price: 390000, rating: 4.5, reviews: 90, oldPrice: 490000, badge: "SALE" }, "Xanh Lá"),
+  colorway(mBagKeefly, { slug: "balo-mini-the-thao-keepfly-do-cam", name: "Balo Mini Thể Thao Keepfly — Cam", image: I("p-mau-s02-orange"), price: 390000, rating: 4.6, reviews: 103 }, "Cam"),
+  colorway(mShSkechers, { slug: "giay-chay-bo-skechers-max-cushioning-trang-tim-trang-vang-dong", name: "Giày Chạy Bộ Skechers Max Cushioning — Trắng Vàng Đồng", image: I("p-mau-s06-green"), price: 2190000, rating: 4.7, reviews: 116 }, "Trắng Vàng Đồng"),
+  colorway(mShSkechers, { slug: "giay-chay-bo-skechers-max-cushioning-trang-tim-trang-xanh-la", name: "Giày Chạy Bộ Skechers Max Cushioning — Trắng Xanh Lá", image: I("p-mau-s06-blue"), price: 2190000, rating: 4.8, reviews: 129 }, "Trắng Xanh Lá"),
+  colorway(mShSkechers, { slug: "giay-chay-bo-skechers-max-cushioning-trang-tim-trang-cam-hong", name: "Giày Chạy Bộ Skechers Max Cushioning — Trắng Cam Hồng", image: I("p-mau-s06-orange"), price: 2190000, rating: 4.9, reviews: 142 }, "Trắng Cam Hồng"),
+  colorway(mVisor, { slug: "mu-nua-dau-the-thao-hong-pastel-kem", name: "Mũ Nửa Đầu Thể Thao — Kem", image: I("p-mau-s08-cream"), price: 290000, rating: 4.5, reviews: 155, oldPrice: 390000, badge: "SALE" }, "Kem"),
+  colorway(mVisor, { slug: "mu-nua-dau-the-thao-hong-pastel-xanh-mint", name: "Mũ Nửa Đầu Thể Thao — Xanh Mint", image: I("p-mau-s08-mint"), price: 290000, rating: 4.6, reviews: 168 }, "Xanh Mint"),
+  colorway(mVisor, { slug: "mu-nua-dau-the-thao-hong-pastel-xanh-troi", name: "Mũ Nửa Đầu Thể Thao — Xanh Trời", image: I("p-mau-s08-sky"), price: 290000, rating: 4.7, reviews: 31 }, "Xanh Trời"),
+  colorway(mVisor, { slug: "mu-nua-dau-the-thao-hong-pastel-tim-lilac", name: "Mũ Nửa Đầu Thể Thao — Tím Lilac", image: I("p-mau-s08-lilac"), price: 290000, rating: 4.8, reviews: 44 }, "Tím Lilac"),
+  colorway(mCapKelme, { slug: "mu-luoi-trai-kelme-den-xanh-navy", name: "Mũ Lưỡi Trai Kelme — Xanh Navy", image: I("p-mau-s10-navy"), price: 350000, rating: 4.9, reviews: 57 }, "Xanh Navy"),
+  colorway(mCapKelme, { slug: "mu-luoi-trai-kelme-den-do-ruou", name: "Mũ Lưỡi Trai Kelme — Đỏ Rượu", image: I("p-mau-s10-red"), price: 350000, rating: 4.5, reviews: 70, oldPrice: 450000, badge: "SALE" }, "Đỏ Rượu"),
+  colorway(mCapKelme, { slug: "mu-luoi-trai-kelme-den-xanh-la", name: "Mũ Lưỡi Trai Kelme — Xanh Lá", image: I("p-mau-s10-forest"), price: 350000, rating: 4.6, reviews: 83 }, "Xanh Lá"),
+  colorway(mCapKelme, { slug: "mu-luoi-trai-kelme-den-cam-dat", name: "Mũ Lưỡi Trai Kelme — Cam Đất", image: I("p-mau-s10-orange"), price: 350000, rating: 4.7, reviews: 96 }, "Cam Đất"),
+  colorway(mShTech, { slug: "giay-chay-bo-cong-nghe-xanh-cam-xanh-cam-duong", name: "Giày Chạy Bộ Công Nghệ — Xanh Cam Dương", image: I("p-mau-s11-blue"), price: 1590000, rating: 4.8, reviews: 109 }, "Xanh Cam Dương"),
+  colorway(mShTech, { slug: "giay-chay-bo-cong-nghe-xanh-cam-tim-cam", name: "Giày Chạy Bộ Công Nghệ — Tím Cam", image: I("p-mau-s11-purple"), price: 1590000, rating: 4.9, reviews: 122 }, "Tím Cam"),
+  colorway(mBagKamito, { slug: "balo-kamito-xanh-navy-hoa-tiet-tim-man", name: "Balo Kamito Họa Tiết — Tím Mận", image: I("p-mau-s13-green"), price: 850000, rating: 4.5, reviews: 135, oldPrice: 950000, badge: "SALE" }, "Tím Mận"),
+  colorway(mBagKamito, { slug: "balo-kamito-xanh-navy-hoa-tiet-nau-dong", name: "Balo Kamito Họa Tiết — Nâu Đồng", image: I("p-mau-s13-red"), price: 850000, rating: 4.6, reviews: 148 }, "Nâu Đồng"),
+  colorway(mBagKamito, { slug: "balo-kamito-xanh-navy-hoa-tiet-xanh-ngoc-dam", name: "Balo Kamito Họa Tiết — Xanh Ngọc Đậm", image: I("p-mau-s13-purple"), price: 850000, rating: 4.7, reviews: 161 }, "Xanh Ngọc Đậm"),
+  colorway(mBagKamito, { slug: "balo-kamito-xanh-navy-hoa-tiet-tim-than", name: "Balo Kamito Họa Tiết — Tím Than", image: I("p-mau-s13-teal"), price: 850000, rating: 4.8, reviews: 174 }, "Tím Than"),
+];
+
+/** Danh sách đang dùng = sản phẩm mặc định + sản phẩm admin thêm (được nạp ở trình duyệt, xem lib/catalog.tsx). */
+export const products: Product[] = [...baseProducts];
+
+export const thicknessLabel = { 1: "Mỏng", 2: "Vừa", 3: "Dày" } as const;
+
+// Đường dẫn/đơn hàng cũ trỏ tới slug đã đổi → tự chuyển sang sản phẩm mới
+const aliases: Record<string, string> = {
+  "ao-khoac-gio-trail-techfleece": "ao-thun-audi-revolut-f1-carbon-black",
+  "quan-chay-bo-co-gian-xuan": "quan-track-pants-kinetic-audi-f1",
+  "quan-short-chay-bo-2-trong-1": "quan-jogger-tech-fleece-kinetic",
+  "ao-polo-audi-revolut-f1-vien-xanh-duong": "ao-polo-xe-dua-audi-revolut-f1",
+  "ao-polo-audi-revolut-f1-vien-xanh-la": "ao-polo-xe-dua-audi-revolut-f1",
+  "balo-roll-top-audi-revolut-f1-vien-cam": "balo-roll-top-audi-revolut-f1-xanh-navy",
+  "balo-roll-top-audi-revolut-f1-vien-ngoc": "balo-roll-top-audi-revolut-f1-olive",
+  "balo-roll-top-audi-revolut-f1-vien-xanh": "balo-roll-top-audi-revolut-f1-do-ruou",
+  "balo-roll-top-audi-revolut-f1-vien-hong": "balo-roll-top-audi-revolut-f1-xam-khoi",
+  "mu-luoi-trai-audi-f1-team-so-55-cam": "mu-luoi-trai-audi-f1-team-xanh-navy",
+  "mu-luoi-trai-audi-f1-team-so-55-ngoc": "mu-luoi-trai-audi-f1-team-olive",
+  "mu-luoi-trai-audi-f1-team-so-55-xanh": "mu-luoi-trai-audi-f1-team-do-ruou",
+  "mu-luoi-trai-audi-f1-team-so-55-hong": "mu-luoi-trai-audi-f1-team-xam-khoi",
+};
+
+export const getProduct = (slug: string) => products.find((p) => p.slug === slug) ?? products.find((p) => p.slug === aliases[slug]);
+
+/** Ảnh thu nhỏ (t-*.jpg) tương ứng với ảnh sản phẩm p-*.jpg; ảnh khác (ảnh tải lên, ảnh banner) giữ nguyên. */
+export const thumb = (src: string) => src.replace("/products/p-", "/products/t-");
+
+export const formatVnd = (n: number) => `${n.toLocaleString("vi-VN")} ₫`;
+
+// Tên màu của sản phẩm gốc (các phiên bản màu tự mang colorLabel)
+const baseColorLabels: Record<string, string> = {
+  "ao-thun-chay-sieu-thoang-heat-rdy": "Volt Teal", "ao-phao-the-thao-thermo-puffer": "Xanh Băng", "balo-roll-top-hybrid-audi-revolut-f1": "Đen", "mu-luoi-trai-audi-f1-team-cap": "Đen",
+  "ao-thun-audi-revolut-f1-carbon-black": "Xám Nhạt", "ao-dap-xe-cycling-club-jersey": "Đỏ", "ao-thun-the-thao-phoi-den-do-gach": "Đỏ Gạch", "ao-thun-dua-xe-aston-martin-f1-team": "Xanh Lục",
+  "ao-polo-doi-dua-scuderia-ferrari-do": "Đỏ", "balo-pickleball-jogarbola-xanh-navy": "Xanh Navy", "giay-sneaker-chunky-trang-xam": "Trắng Xám", "mu-luoi-trai-la-cam-dat": "Cam Đất", "balo-mini-the-thao-keepfly-do": "Đỏ", "giay-chay-bo-skechers-max-cushioning-trang-tim": "Trắng Tím", "mu-nua-dau-the-thao-hong-pastel": "Hồng Pastel", "mu-luoi-trai-kelme-den": "Đen", "giay-chay-bo-cong-nghe-xanh-cam": "Xanh Cam", "balo-kamito-xanh-navy-hoa-tiet": "Xanh Navy", "giay-sneaker-luoi-mint-boost": "Mint", "giay-luoi-slip-on-det-den-xam": "Đen Xám", "balo-roll-top-outdoor-acg-den": "Dây Tím", "tui-pickleball-kamito-elite-tour-v3": "Đỏ Trắng", "bo-do-dap-xe-nu-tay-dai-hong-tim": "Hồng Tím", "quan-motocross-fox-180-den-trang": "Đen Trắng", "quan-motocross-fox-180-be-neon": "Be Neon",
+};
+
+/** Các phiên bản màu cùng một mẫu (gồm cả sản phẩm gốc), theo thứ tự: gốc trước. Chỉ có 1 phần tử = mẫu không có màu khác. */
+export const getVariants = (p: Product): { slug: string; image: string; label: string }[] => {
+  const fam = p.family ?? p.slug;
+  const list = products.filter((x) => (x.family ?? x.slug) === fam);
+  return list
+    .sort((a, b) => Number(b.slug === fam) - Number(a.slug === fam))
+    .map((x) => ({ slug: x.slug, image: x.image, label: x.colorLabel ?? baseColorLabels[x.slug] ?? "Mặc định" }));
+};

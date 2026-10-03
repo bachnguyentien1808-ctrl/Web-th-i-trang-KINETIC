@@ -1,0 +1,35 @@
+import type { ReactNode } from "react";
+
+const perks = [
+  ["⚡", "Giao hoả tốc 2–4h", "Nội thành, nhận hàng ngay trong ngày"],
+  ["★", "Tích điểm hội viên", "Mỗi đơn hàng đều được cộng điểm đổi voucher"],
+  ["↺", "Đổi trả 30 ngày", "Miễn phí, không cần lý do"],
+];
+
+/** Khung 2 cột dùng chung cho đăng nhập / đăng ký / quên mật khẩu: bên trái giới thiệu thương hiệu, bên phải là biểu mẫu. */
+export default function AuthShell({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
+  return (
+    <div className="auth-shell">
+      <aside className="auth-aside">
+        <div className="auth-brand">
+          <span className="stripes"><i /><i /><i /></span>
+          <b>KINETIC</b>
+        </div>
+        <div className="auth-pitch">
+          <p className="auth-eyebrow">TRANG PHỤC THỂ THAO HIỆU NĂNG CAO</p>
+          <h2>MỖI NGÀY<br />NHANH HƠN<br />MỘT CHÚT.</h2>
+          <ul>
+            {perks.map(([icon, t, d]) => (
+              <li key={t}><span>{icon}</span><div><b>{t}</b><small>{d}</small></div></li>
+            ))}
+          </ul>
+        </div>
+      </aside>
+      <section className="auth-main">
+        <p className="auth-eyebrow dark">{eyebrow}</p>
+        <h1 className="auth-title">{title}</h1>
+        {children}
+      </section>
+    </div>
+  );
+}

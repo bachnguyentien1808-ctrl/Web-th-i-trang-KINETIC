@@ -1,0 +1,94 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import RequireAuth from "@/components/RequireAuth";
+import { isAdmin } from "@/lib/admin";
+import { useAuth } from "@/lib/auth";
+import { loyaltyOf } from "@/lib/loyalty";
+import { readOrders } from "@/lib/orders";
+import { emptyProfile, readProfile, saveProfile, type Profile } from "@/lib/profile";
+import { toast } from "@/lib/toast";
+
+function ProfileView() {
+  const { user, logout } = useAuth();
+  const [saved, setSaved] = useState<Profile>(emptyProfile);
+  const [prof, setProf] = useState<Profile>(emptyProfile);
+  const [stats, setStats] = useState<{ orders: number; tier: string; color: string; rate: number } | null>(null);
+  const admin = !!user && isAdmin(user.email);
+
+  useEffect(() => {
+    if (!user) return;
+    const p = readProfile(user.email);
+    setSaved(p); setProf(p);
+    if (!isAdmin(user.email)) {
+      const orders = readOrders(user.email), l = loyaltyOf(orders);
+      setStats({ orders: orders.length, tier: l.tier.name, color: l.tier.color, rate: l.tier.rate });
+    }
+  }, [user]);
+  if (!user) return null;
+
+  const dirty = prof.phone !== saved.phone || prof.birth !== saved.birth || prof.address !== saved.address;
+  const filled = 2 + [saved.phone, saved.birth, saved.address].filter(Boolean).length;
+  const pct = Math.round((filled / 5) * 100);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const next = { ...prof, phone: prof.phone.trim(), address: prof.address.trim() };
+    if (saveProfile(user.email, next)) { setSaved(next); setProf(next); toast("Thông tin cá nhân của bạn đã được cập nhật.", { title: "Đã lưu thay đổi" }); }
+    else toast("Không lưu được, bộ nhớ trình duyệt đã đầy.", { type: "error" });
+  };
+
+  return (
+    <div className="pf3">
+      <div className="container pf3-wrap">
+        <aside className="pf3-side">
+          <div className="pf3-who">
+            <span className="pf3-ava">{user.name.trim().charAt(0).toUpperCase()}</span>
+            <div><b>{user.name}</b><small>{admin ? "Quản trị viên" : stats ? `Hạng ${stats.tier}` : "Thành viên"}</small></div>
+          </div>
+          <nav className="pf3-menu">
+            <Link href="/account/profile" className="on">Hồ sơ của tôi</Link>
+            {!admin && <Link href="/orders">Đơn hàng của tôi</Link>}
+            {!admin && <Link href="/account">Thẻ & điểm hội viên</Link>}
+            {admin && <Link href="/admin">Trang quản trị</Link>}
+            <button onClick={logout}>Đăng xuất</button>
+          </nav>
+        </aside>
+
+        <main className="pf3-main">
+          <header className="pf3-head">
+            <h1>Hồ sơ của tôi</h1>
+            <p>Quản lý thông tin để việc đặt hàng và giao hàng nhanh hơn.</p>
+          </header>
+
+          <div className="pf3-body">
+            <form className="pf3-form" onSubmit={submit}>
+              <label><span>Email đăng nhập</span><div className="pf3-ro">{user.email}</div></label>
+              <label><span>Họ và tên</span><div className="pf3-ro">{user.name}</div></label>
+              <label><span>Số điện thoại</span><input inputMode="tel" maxLength={15} value={prof.phone} onChange={(e) => setProf({ ...prof, phone: e.target.value.replace(/[^\d+ ]/g, "") })} placeholder="0901 234 567" /></label>
+              <label><span>Ngày sinh</span><input type="date" value={prof.birth} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setProf({ ...prof, birth: e.target.value })} /></label>
+              <label className="top"><span>Địa chỉ giao hàng</span><textarea rows={3} maxLength={200} value={prof.address} onChange={(e) => setProf({ ...prof, address: e.target.value })} placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành" /></label>
+              <div className="pf3-act">
+                <span />
+                <div>
+                  <button type="submit" className="pf3-save" disabled={!dirty}>Lưu thay đổi</button>
+                  {dirty && <button type="button" className="pf3-reset" onClick={() => setProf(saved)}>Hoàn tác</button>}
+                </div>
+              </div>
+            </form>
+
+            <aside className="pf3-badge">
+              <span className="pf3-big">{user.name.trim().charAt(0).toUpperCase()}</span>
+              <b>{user.name}</b>
+              <div className="pf3-meter"><i style={{ width: `${pct}%` }} /></div>
+              <small>Hồ sơ hoàn thiện {pct}%</small>
+              {!admin && stats && <div className="pf3-nums"><div><b>{stats.orders}</b><span>Đơn hàng</span></div><div><b>{stats.rate}%</b><span>Tích điểm</span></div></div>}
+            </aside>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default function ProfilePage() { return <RequireAuth><ProfileView /></RequireAuth>; }

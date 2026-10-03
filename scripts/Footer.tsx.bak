@@ -1,0 +1,21 @@
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+export default function Footer() {
+  if (usePathname().startsWith("/admin")) return null;
+  return (
+    <footer className="footer">
+      <div className="container fgrid">
+        <div>
+          <div className="logo light"><span className="stripes"><i /><i /><i /></span>KINETIC</div>
+          <p>Thương hiệu trang phục thể thao hiệu năng cao & streetwear kỹ thuật. Định hình tốc độ, năng lượng và tinh thần thể thao tại Việt Nam.</p>
+        </div>
+        <div><h4>Sản phẩm</h4><Link href="/products?cat=ao">Áo</Link><Link href="/products?cat=quan">Quần</Link><Link href="/products?cat=giay">Giày</Link><Link href="/products?cat=phu-kien">Phụ kiện</Link></div>
+        <div><h4>Chính sách</h4><span>Đổi trả 30 ngày</span><span>Bảo hành 365 ngày</span><span>Vận chuyển toàn quốc</span></div>
+        <div><h4>Liên hệ</h4><span>128 Nguyễn Trãi, Quận 1, TP. Hồ Chí Minh</span><span>Hotline: 1900 8899</span><span>care@kinetic.vn</span></div>
+      </div>
+      <div className="container copy">© 2025 KINETIC VIETNAM CO., LTD. Tất cả quyền được bảo lưu.</div>
+    </footer>
+  );
+}

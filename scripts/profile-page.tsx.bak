@@ -1,0 +1,58 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import RequireAuth from "@/components/RequireAuth";
+import { isAdmin } from "@/lib/admin";
+import { useAuth } from "@/lib/auth";
+import { toast } from "@/lib/toast";
+import { emptyProfile, fmtBirth, readProfile, saveProfile, type Profile } from "@/lib/profile";
+
+function ProfileView() {
+  const { user } = useAuth();
+  const [prof, setProf] = useState<Profile>(emptyProfile);
+  const [edit, setEdit] = useState(false);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => { if (user) setProf(readProfile(user.email)); }, [user]);
+  if (!user) return null;
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (saveProfile(user.email, prof)) { setEdit(false); setSaved(true); toast("Thông tin cá nhân của bạn đã được cập nhật.", { title: "Đã lưu thay đổi" }); }
+  };
+  const row = (label: string, value: React.ReactNode) => (
+    <div className="pf-row"><span>{label}</span><b>{value || <em>Chưa cập nhật</em>}</b></div>
+  );
+
+  return (
+    <div className="container section">
+      <h1 className="h1">THÔNG TIN CÁ NHÂN</h1>
+      <div className="pf-card">
+        <div className="pf-head">
+          <span className="avatar big">{user.name.trim().charAt(0).toUpperCase()}</span>
+          <div><h2>{user.name}</h2><small>{user.email}</small></div>
+          {!edit && <button className="btn btn-black sm" onClick={() => { setEdit(true); setSaved(false); }}>CHỈNH SỬA</button>}
+        </div>
+        {saved && <p className="acct-ok">✓ Đã lưu thông tin</p>}
+        {!edit ? (
+          <div className="pf-list">
+            {row("Họ tên", user.name)}
+            {row("Email", user.email)}
+            {row("Số điện thoại", prof.phone)}
+            {row("Ngày sinh", fmtBirth(prof.birth))}
+            {row("Địa chỉ", prof.address)}
+          </div>
+        ) : (
+          <form className="pf-form" onSubmit={submit}>
+            <label>Số điện thoại<input inputMode="tel" value={prof.phone} maxLength={15} onChange={(e) => setProf({ ...prof, phone: e.target.value.replace(/[^\d+ ]/g, "") })} placeholder="0901 234 567" /></label>
+            <label>Ngày sinh<input type="date" value={prof.birth} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setProf({ ...prof, birth: e.target.value })} /></label>
+            <label>Địa chỉ<textarea rows={3} value={prof.address} maxLength={200} onChange={(e) => setProf({ ...prof, address: e.target.value })} placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành" /></label>
+            <div className="acct-prof-btns"><button type="submit" className="btn btn-black">LƯU THAY ĐỔI</button><button type="button" className="btn btn-outline" onClick={() => { setEdit(false); setProf(readProfile(user.email)); }}>HUỶ</button></div>
+          </form>
+        )}
+      </div>
+      {!isAdmin(user.email) && <p className="pf-links"><Link href="/account" className="ul">Thẻ & điểm hội viên →</Link> · <Link href="/orders" className="ul">Đơn hàng của tôi →</Link></p>}
+    </div>
+  );
+}
+
+export default function ProfilePage() { return <RequireAuth><ProfileView /></RequireAuth>; }

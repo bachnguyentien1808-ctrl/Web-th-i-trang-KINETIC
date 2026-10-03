@@ -1,0 +1,87 @@
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import images from "@/lib/images.json";
+
+const img = images as Record<string, string>;
+const INTERVAL = 5500;
+
+const slides = [
+  { key: "life", img: "autumn-hero", tag: "BỘ SƯU TẬP 4 MÙA 2025", title: ["THỂ THAO", "LÀ PHONG CÁCH", "SỐNG"], sub: "Trang phục thể thao hiệu năng cao, đồng hành cùng bạn trên mọi hành trình — mọi mùa, mọi địa hình.", cta: { label: "MUA NGAY", href: "/products" }, cta2: { label: "XEM ƯU ĐÃI", href: "/offers" } },
+  { key: "summer", img: "summer-hero", tag: "MÙA HẠ · HEAT.RDY", title: ["SUMMER", "HEAT", "NHẸ & MÁT"], sub: "Vải thoáng khí, khô nhanh, giảm tới 3,2°C nhiệt cơ thể cho những buổi chạy nắng nóng.", cta: { label: "KHÁM PHÁ MÙA HẠ", href: "/products?season=ha" }, cta2: { label: "TẤT CẢ SẢN PHẨM", href: "/products" } },
+  { key: "winter", img: "winter-hero", tag: "MÙA ĐÔNG · COLD.RDY", title: ["WINTER", "THERMO", "GIỮ ẤM"], sub: "Lông vũ sinh học Bio-Down giữ nhiệt tới -5°C, nhẹ như áo gió, ấm như áo phao.", cta: { label: "KHÁM PHÁ MÙA ĐÔNG", href: "/products?season=dong" }, cta2: { label: "XEM ÁO KHOÁC", href: "/products?cat=ao" } },
+  { key: "spring", img: "spring-hero", tag: "MÙA XUÂN · CLIMASTORM", title: ["SPRING", "RUN", "BỨT TỐC"], sub: "Áo gió siêu nhẹ, gấp gọn vừa túi ngực, chống thấm DWR 5.0 cho những ngày se lạnh.", cta: { label: "KHÁM PHÁ MÙA XUÂN", href: "/products?season=xuan" }, cta2: { label: "XEM VOUCHER", href: "/offers" } },
+  { key: "sale", img: "shoe-winter", tag: "ƯU ĐÃI ĐẶC BIỆT", title: ["SALE", "LÊN ĐẾN", "50%++"], sub: "Số lượng có hạn · Kết hợp nhiều voucher để tiết kiệm tối đa. Đừng bỏ lỡ!", cta: { label: "MUA NGAY", href: "/products?sale=1" }, cta2: { label: "XEM VOUCHER", href: "/offers" } },
+];
+
+export default function HeroCarousel() {
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  const [hdr, setHdr] = useState(122); // chiều cao header để banner vừa đủ một màn hình
+  const touch = useRef<number | null>(null);
+  const n = slides.length;
+
+  const go = useCallback((to: number) => setI(((to % n) + n) % n), [n]);
+
+  useEffect(() => { setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches); }, []);
+  useEffect(() => {
+    const measure = () => { const h = document.querySelector<HTMLElement>(".header"); if (h) setHdr(h.offsetHeight); };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+  useEffect(() => {
+    if (paused || reduced) return;
+    const t = setTimeout(() => go(i + 1), INTERVAL);
+    return () => clearTimeout(t);
+  }, [i, paused, reduced, go]);
+
+  return (
+    <section className="big-hero carousel" style={{ height: `calc(100svh - ${hdr}px)` }} aria-roledescription="carousel" aria-label="Banner nổi bật"
+      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}
+      onTouchStart={(e) => { touch.current = e.touches[0].clientX; }}
+      onTouchEnd={(e) => { if (touch.current === null) return; const d = e.changedTouches[0].clientX - touch.current; if (Math.abs(d) > 50) go(i + (d < 0 ? 1 : -1)); touch.current = null; }}>
+      {slides.map((s, idx) => (
+        <div key={s.key} className={idx === i ? "bh-slide on" : "bh-slide"} aria-hidden={idx !== i} role="group" aria-label={`${idx + 1} / ${n}`}>
+          <Image src={img[s.img]} alt="" fill priority={idx === 0} loading={idx === 0 ? undefined : "eager"} sizes="100vw" />
+          <div className="bh-shade" />
+          <div className="container bh-inner">
+            <div className="bh-text">
+              <small className="bh-tag">{s.tag}</small>
+              <h1>{s.title[0]}<br />{s.title[1]}<br /><span>{s.title[2]}</span></h1>
+              <p>{s.sub}</p>
+              <div className="hero-cta">
+                <Link href={s.cta.href} tabIndex={idx === i ? 0 : -1} className="btn btn-yellow">{s.cta.label} →</Link>
+                <Link href={s.cta2.href} tabIndex={idx === i ? 0 : -1} className="btn btn-outline light">{s.cta2.label}</Link>
+              </div>
+            </div>
+            <div className="bh-card">
+              <div className="bh-offers">
+                <small>ƯU ĐÃI HÔM NAY</small>
+                <div><span>Giao nội thành HN & HCM</span><em>2–4 giờ</em></div>
+                <div><span>Giao các tỉnh</span><em>2–5 ngày</em></div>
+                <div><span>Freeship từ 899.000₫</span><em>Toàn quốc</em></div>
+                <Link href="/products" tabIndex={idx === i ? 0 : -1}>Xem tất cả sản phẩm →</Link>
+              </div>
+              <div className="bh-fast"><b>2h</b> GIAO HỎA TỐC</div>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <button className="bh-arrow prev" aria-label="Slide trước" onClick={() => go(i - 1)}>‹</button>
+      <button className="bh-arrow next" aria-label="Slide tiếp theo" onClick={() => go(i + 1)}>›</button>
+
+      <div className="bh-dots" role="tablist">
+        {slides.map((s, idx) => (
+          <button key={s.key} role="tab" aria-selected={idx === i} aria-label={`Slide ${idx + 1}`} className={idx === i ? "on" : ""} onClick={() => go(idx)}>
+            <i style={idx === i && !reduced ? { animationDuration: `${INTERVAL}ms`, animationPlayState: paused ? "paused" : "running" } : undefined} />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}

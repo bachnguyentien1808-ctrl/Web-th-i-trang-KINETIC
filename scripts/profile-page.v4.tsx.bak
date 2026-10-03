@@ -1,0 +1,105 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import RequireAuth from "@/components/RequireAuth";
+import { isAdmin } from "@/lib/admin";
+import { useAuth } from "@/lib/auth";
+import { loyaltyOf } from "@/lib/loyalty";
+import { readOrders } from "@/lib/orders";
+import { emptyProfile, fmtBirth, readProfile, saveProfile, type Profile } from "@/lib/profile";
+import { toast } from "@/lib/toast";
+
+type Key = "phone" | "birth" | "address";
+
+function ProfileView() {
+  const { user, logout } = useAuth();
+  const [prof, setProf] = useState<Profile>(emptyProfile);
+  const [editing, setEditing] = useState<Key | null>(null);
+  const [draft, setDraft] = useState("");
+  const [stats, setStats] = useState<{ orders: number; tier: string; color: string; rate: number } | null>(null);
+  const admin = !!user && isAdmin(user.email);
+
+  useEffect(() => {
+    if (!user) return;
+    setProf(readProfile(user.email));
+    if (!isAdmin(user.email)) {
+      const orders = readOrders(user.email), l = loyaltyOf(orders);
+      setStats({ orders: orders.length, tier: l.tier.name, color: l.tier.color, rate: l.tier.rate });
+    }
+  }, [user]);
+  if (!user) return null;
+
+  const filled = 2 + [prof.phone, prof.birth, prof.address].filter(Boolean).length;
+  const pct = Math.round((filled / 5) * 100);
+  const tierColor = stats?.color ?? "#e2fa1e";
+
+  const start = (k: Key) => { setEditing(k); setDraft(prof[k]); };
+  const save = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editing) return;
+    const next = { ...prof, [editing]: draft.trim() };
+    if (saveProfile(user.email, next)) { setProf(next); setEditing(null); toast("Thông tin cá nhân của bạn đã được cập nhật.", { title: "Đã lưu thay đổi" }); }
+    else toast("Không lưu được, bộ nhớ trình duyệt đã đầy.", { type: "error" });
+  };
+
+  const field = (k: Key | null, icon: string, label: string, value: string, input?: React.ReactNode) => (
+    <li className={`pd-item${k && editing === k ? " editing" : ""}`}>
+      <span className="pd-ic" aria-hidden="true">{icon}</span>
+      <div className="pd-val">
+        <small>{label}</small>
+        {k && editing === k ? (
+          <form onSubmit={save}>
+            {input}
+            <div className="pd-ed"><button className="pd-save" type="submit">Lưu</button><button type="button" className="pd-cancel" onClick={() => setEditing(null)}>Huỷ</button></div>
+          </form>
+        ) : <b className={value ? "" : "none"}>{value || "Chưa cập nhật"}</b>}
+      </div>
+      {k && editing !== k && <button className="pd-edit" onClick={() => start(k)} aria-label={`Sửa ${label}`}>Sửa</button>}
+    </li>
+  );
+
+  return (
+    <div className="pd-page">
+      <div className="container pd-wrap">
+        <section className="pd-left">
+          <div className="pd-card" style={{ ["--tier" as string]: tierColor }}>
+            <div className="pd-card-top"><b>KINETIC</b><span>{admin ? "ADMIN" : "MEMBER"}</span></div>
+            <i className="pd-chip" />
+            <div className="pd-card-name">{user.name}</div>
+            <div className="pd-card-foot">
+              <span>{user.email}</span>
+              {!admin && stats && <em>HẠNG {stats.tier.toUpperCase()}</em>}
+            </div>
+          </div>
+          <div className="pd-meter">
+            <div className="pd-meter-top"><span>Hoàn thiện hồ sơ</span><b>{pct}%</b></div>
+            <div className="pd-track"><i style={{ width: `${pct}%` }} /></div>
+            <small>{pct === 100 ? "Hồ sơ đã đầy đủ" : "Bổ sung thông tin còn thiếu để đặt hàng nhanh hơn"}</small>
+          </div>
+          {!admin && stats && (
+            <div className="pd-mini"><div><b>{stats.orders}</b><span>Đơn hàng</span></div><div><b>{stats.rate}%</b><span>Tích điểm</span></div></div>
+          )}
+        </section>
+
+        <section className="pd-right">
+          <p className="pd-eyebrow">TÀI KHOẢN</p>
+          <h1>THÔNG TIN CÁ NHÂN</h1>
+          <p className="pd-hint">Bấm “Sửa” ở từng mục để cập nhật nhanh, không cần mở biểu mẫu.</p>
+          <ul className="pd-list">
+            {field(null, "👤", "Họ và tên", user.name)}
+            {field(null, "✉", "Email", user.email)}
+            {field("phone", "☎", "Số điện thoại", prof.phone, <input inputMode="tel" maxLength={15} value={draft} autoFocus onChange={(e) => setDraft(e.target.value.replace(/[^\d+ ]/g, ""))} placeholder="0901 234 567" />)}
+            {field("birth", "🎂", "Ngày sinh", fmtBirth(prof.birth), <input type="date" value={draft} max={new Date().toISOString().slice(0, 10)} autoFocus onChange={(e) => setDraft(e.target.value)} />)}
+            {field("address", "📍", "Địa chỉ giao hàng", prof.address, <textarea rows={3} maxLength={200} value={draft} autoFocus onChange={(e) => setDraft(e.target.value)} placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành" />)}
+          </ul>
+          <div className="pd-links">
+            {admin ? <Link href="/admin">Trang quản trị</Link> : <><Link href="/orders">Đơn hàng của tôi</Link><Link href="/account">Thẻ & điểm hội viên</Link></>}
+            <button onClick={logout}>Đăng xuất</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+export default function ProfilePage() { return <RequireAuth><ProfileView /></RequireAuth>; }

@@ -1,0 +1,111 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import RequireAuth from "@/components/RequireAuth";
+import { isAdmin } from "@/lib/admin";
+import { useAuth } from "@/lib/auth";
+import { loyaltyOf } from "@/lib/loyalty";
+import { readOrders } from "@/lib/orders";
+import { emptyProfile, fmtBirth, readProfile, saveProfile, type Profile } from "@/lib/profile";
+import { toast } from "@/lib/toast";
+
+const ICONS: Record<string, string> = { name: "👤", email: "✉", phone: "☎", birth: "🎂", address: "📍" };
+
+function ProfileView() {
+  const { user, logout } = useAuth();
+  const [prof, setProf] = useState<Profile>(emptyProfile);
+  const [edit, setEdit] = useState(false);
+  const [stats, setStats] = useState<{ orders: number; tier: string; color: string; rate: number } | null>(null);
+  const admin = !!user && isAdmin(user.email);
+
+  useEffect(() => {
+    if (!user) return;
+    setProf(readProfile(user.email));
+    if (!isAdmin(user.email)) {
+      const orders = readOrders(user.email), l = loyaltyOf(orders);
+      setStats({ orders: orders.length, tier: l.tier.name, color: l.tier.color, rate: l.tier.rate });
+    }
+  }, [user]);
+
+  const fields = useMemo(() => [prof.phone, prof.birth, prof.address], [prof]);
+  if (!user) return null;
+  const done = 2 + fields.filter(Boolean).length; // họ tên + email luôn có
+  const pct = Math.round((done / 5) * 100);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (saveProfile(user.email, prof)) { setEdit(false); toast("Thông tin cá nhân của bạn đã được cập nhật.", { title: "Đã lưu thay đổi" }); }
+    else toast("Không lưu được, bộ nhớ trình duyệt đã đầy.", { type: "error" });
+  };
+
+  const tile = (key: string, label: string, value: string, wide = false) => (
+    <div className={`pfx-tile${wide ? " wide" : ""}${value ? "" : " empty"}`}>
+      <span className="pfx-ic" aria-hidden="true">{ICONS[key]}</span>
+      <div><small>{label}</small><b>{value || "Chưa cập nhật"}</b></div>
+    </div>
+  );
+
+  return (
+    <div className="container section">
+      <div className="pfx">
+        <aside className="pfx-side">
+          <div className="pfx-id">
+            <span className="pfx-avatar">{user.name.trim().charAt(0).toUpperCase()}</span>
+            <h2>{user.name}</h2>
+            <small>{user.email}</small>
+            {admin ? <span className="pfx-badge">QUẢN TRỊ VIÊN</span> : stats && <span className="pfx-badge tier" style={{ ["--tier" as string]: stats.color }}>HẠNG {stats.tier.toUpperCase()}</span>}
+          </div>
+          {!admin && stats && (
+            <div className="pfx-stats">
+              <div><b>{stats.orders}</b><small>Đơn hàng</small></div>
+              <div><b>{stats.rate}%</b><small>Tích điểm</small></div>
+            </div>
+          )}
+          <nav className="pfx-nav">
+            <Link href="/account/profile" className="on">Thông tin cá nhân</Link>
+            {!admin && <Link href="/account">Thẻ & điểm hội viên</Link>}
+            {!admin && <Link href="/orders">Đơn hàng của tôi</Link>}
+            {admin && <Link href="/admin">Trang quản trị</Link>}
+            <button onClick={logout}>Đăng xuất</button>
+          </nav>
+        </aside>
+
+        <section className="pfx-main">
+          <header className="pfx-top">
+            <div><p className="pfx-eyebrow">TÀI KHOẢN CỦA TÔI</p><h1>THÔNG TIN CÁ NHÂN</h1></div>
+            {!edit && <button className="btn btn-black" onClick={() => setEdit(true)}>✎ CHỈNH SỬA</button>}
+          </header>
+
+          <div className="pfx-progress">
+            <div className="pfx-bar"><i style={{ width: `${pct}%` }} /></div>
+            <small>{pct === 100 ? "Hồ sơ của bạn đã đầy đủ" : `Hồ sơ hoàn thiện ${pct}% — bổ sung thông tin để giao hàng nhanh hơn`}</small>
+          </div>
+
+          {!edit ? (
+            <div className="pfx-grid">
+              {tile("name", "HỌ VÀ TÊN", user.name)}
+              {tile("email", "EMAIL", user.email)}
+              {tile("phone", "SỐ ĐIỆN THOẠI", prof.phone)}
+              {tile("birth", "NGÀY SINH", fmtBirth(prof.birth))}
+              {tile("address", "ĐỊA CHỈ", prof.address, true)}
+            </div>
+          ) : (
+            <form className="pfx-form" onSubmit={submit}>
+              <label className="ro"><span>HỌ VÀ TÊN</span><input value={user.name} disabled /></label>
+              <label className="ro"><span>EMAIL</span><input value={user.email} disabled /></label>
+              <label><span>SỐ ĐIỆN THOẠI</span><input inputMode="tel" value={prof.phone} maxLength={15} onChange={(e) => setProf({ ...prof, phone: e.target.value.replace(/[^\d+ ]/g, "") })} placeholder="0901 234 567" autoFocus /></label>
+              <label><span>NGÀY SINH</span><input type="date" value={prof.birth} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setProf({ ...prof, birth: e.target.value })} /></label>
+              <label className="wide"><span>ĐỊA CHỈ</span><textarea rows={3} value={prof.address} maxLength={200} onChange={(e) => setProf({ ...prof, address: e.target.value })} placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành" /></label>
+              <div className="pfx-actions wide">
+                <button type="submit" className="btn btn-black">LƯU THAY ĐỔI</button>
+                <button type="button" className="btn btn-outline" onClick={() => { setEdit(false); setProf(readProfile(user.email)); }}>HUỶ</button>
+              </div>
+            </form>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+export default function ProfilePage() { return <RequireAuth><ProfileView /></RequireAuth>; }

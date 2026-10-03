@@ -1,0 +1,19 @@
+node_modules
+.next
+*.tsbuildinfo
+.env*
+!.env.example
+.DS_Store
+*.bak
+*.bak[0-9]
+
+# máy cục bộ / thư mục build phụ
+.next-3001
+.claude
+
+# sao lưu, ảnh gốc và ảnh mẫu dùng để tạo ảnh sản phẩm (không cần để chạy web, có thể chứa ảnh mẫu bên thứ ba)
+scripts/reference/
+scripts/backup-*/
+scripts/lib.bak*
+scripts/*.bak*
+*.zip

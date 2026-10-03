@@ -1,0 +1,21 @@
+import type { ReactNode } from "react";
+
+const perks = ["⚡ Giao hoả tốc 2–4h", "★ Tích điểm hội viên", "↺ Đổi trả 30 ngày"];
+
+/** Thẻ giữa trang dùng chung cho đăng nhập / đăng ký / quên mật khẩu (có thể kèm thanh chuyển tab ở trên). */
+export default function AuthShell({ eyebrow, title, tabs, children }: { eyebrow: string; title: string; tabs?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="auth-wrap">
+      <div className="auth-card">
+        {tabs}
+        <div className="auth-body">
+          <div className="auth-mark"><span className="stripes"><i /><i /><i /></span><b>KINETIC</b></div>
+          <p className="auth-eyebrow">{eyebrow}</p>
+          <h1 className="auth-title">{title}</h1>
+          {children}
+        </div>
+      </div>
+      <ul className="auth-perks">{perks.map((p) => <li key={p}>{p}</li>)}</ul>
+    </div>
+  );
+}

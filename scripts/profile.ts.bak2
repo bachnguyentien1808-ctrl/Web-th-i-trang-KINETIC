@@ -1,0 +1,23 @@
+export interface Profile {
+  phone: string; birth: string; address: string;
+  gender: string; height: string; weight: string; shirtSize: string; shoeSize: string;
+  sports: string[]; notifyOrder: boolean; notifyPromo: boolean;
+}
+const key = (email: string) => `kinetic-profile-v1:${email}`;
+export const emptyProfile: Profile = {
+  phone: "", birth: "", address: "", gender: "", height: "", weight: "", shirtSize: "", shoeSize: "",
+  sports: [], notifyOrder: true, notifyPromo: true,
+};
+
+export const genders = ["Nam", "Nữ", "Khác"];
+export const shirtSizes = ["XS", "S", "M", "L", "XL", "XXL"];
+export const shoeSizes = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
+export const sportsList = ["Chạy bộ", "Gym", "Đạp xe", "Bóng đá", "Bóng rổ", "Pickleball", "Yoga", "Bơi lội", "Dã ngoại"];
+
+export function readProfile(email: string): Profile {
+  try { return { ...emptyProfile, ...JSON.parse(localStorage.getItem(key(email)) || "{}") }; } catch { return emptyProfile; }
+}
+export function saveProfile(email: string, p: Profile) {
+  try { localStorage.setItem(key(email), JSON.stringify(p)); return true; } catch { return false; }
+}
+export const fmtBirth = (iso: string) => (iso ? iso.split("-").reverse().join("/") : "");

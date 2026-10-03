@@ -1,0 +1,71 @@
+"use client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import AuthShell from "@/components/AuthShell";
+import { useAuth } from "@/lib/auth";
+
+export default function AuthForm({ mode, next, need }: { mode: "login" | "register"; next: string; need: string | null }) {
+  const { login, register } = useAuth();
+  const router = useRouter();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [shown, setShown] = useState<Record<string, boolean>>({});
+  const isReg = mode === "register";
+  const q = `?next=${encodeURIComponent(next)}${need ? `&need=${need}` : ""}`;
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const name = String(f.get("name") ?? ""), email = String(f.get("email")), pw = String(f.get("password"));
+    const err: Record<string, string> = {};
+    if (isReg && !name.trim()) err.name = "Vui lòng nhập họ tên";
+    if (!/^\S+@\S+\.\S+$/.test(email)) err.email = "Email không hợp lệ";
+    if (pw.length < 6) err.password = "Mật khẩu tối thiểu 6 ký tự";
+    if (isReg && pw !== String(f.get("confirm"))) err.confirm = "Mật khẩu nhập lại không khớp";
+    setErrors(err);
+    if (Object.keys(err).length) return;
+    setBusy(true);
+    const r = isReg ? await register(name, email, pw) : await login(email, pw);
+    setBusy(false);
+    if (!r.ok) { setErrors({ form: r.error }); return; }
+    router.push(next);
+  }
+
+  const field = (n: string, label: string, type = "text", hint?: string) => {
+    const pw = type === "password", visible = !!shown[n];
+    return (
+      <label className={errors[n] ? "field bad" : "field"}>
+        <span>{label}</span>
+        <div className="input-wrap">
+          <input name={n} type={pw && visible ? "text" : type} placeholder={hint} autoComplete={n === "password" ? (isReg ? "new-password" : "current-password") : n === "confirm" ? "new-password" : n} />
+          {pw && <button type="button" className="eye" onClick={() => setShown((s) => ({ ...s, [n]: !s[n] }))} aria-label={visible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}>{visible ? "ẨN" : "HIỆN"}</button>}
+        </div>
+        {errors[n] && <em>{errors[n]}</em>}
+      </label>
+    );
+  };
+
+  return (
+    <AuthShell
+      eyebrow={isReg ? "TẠO TÀI KHOẢN MỚI" : "CHÀO MỪNG TRỞ LẠI"}
+      title={isReg ? "ĐĂNG KÝ" : "ĐĂNG NHẬP"}
+      tabs={<nav className="auth-tabs"><Link href={`/login${q}`} className={isReg ? "" : "on"}>ĐĂNG NHẬP</Link><Link href={`/register${q}`} className={isReg ? "on" : ""}>ĐĂNG KÝ</Link></nav>}
+    >
+      <p className="auth-sub">{isReg ? "Chỉ mất một phút để trở thành hội viên KINETIC và nhận ưu đãi chào mừng." : "Đăng nhập để theo dõi đơn hàng, tích điểm và thanh toán nhanh hơn."}</p>
+      {need && <p className="notice">Bạn cần {isReg ? "đăng ký tài khoản" : "đăng nhập"} {need === "page" ? "để sử dụng tính năng này." : "để thêm sản phẩm vào giỏ hàng."}</p>}
+      <form onSubmit={submit} noValidate>
+        {isReg && field("name", "HỌ VÀ TÊN", "text", "Nguyễn Văn A")}
+        {field("email", "EMAIL", "email", "ten@email.com")}
+        {field("password", "MẬT KHẨU", "password", isReg ? "Tối thiểu 6 ký tự" : undefined)}
+        {isReg && field("confirm", "NHẬP LẠI MẬT KHẨU", "password")}
+        {!isReg && <p className="forgot"><Link href="/forgot-password">Quên mật khẩu?</Link></p>}
+        {errors.form && <p className="form-err">{errors.form} {errors.form.includes("đăng ký") && <Link href={`/register${q}`}>Đăng ký ngay</Link>}</p>}
+        <button className="btn btn-black full" disabled={busy}>{busy ? "ĐANG XỬ LÝ..." : isReg ? "TẠO TÀI KHOẢN" : "ĐĂNG NHẬP"}</button>
+      </form>
+      <p className="switch">
+        {isReg ? <>Đã có tài khoản? <Link href={`/login${q}`}>Đăng nhập</Link></> : <>Chưa có tài khoản? <Link href={`/register${q}`}>Đăng ký</Link></>}
+      </p>
+    </AuthShell>
+  );
+}
